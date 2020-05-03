@@ -1,3 +1,4 @@
+import colorsys
 from collections.abc import Iterable
 from random import random, uniform, randint
 
@@ -6,13 +7,18 @@ class Color:
 
     _RANGES = {
         'hsl': (0, 1, float),
+        'hsv': (0, 1, float),
+        'rgb': (0, 255, int),
     }
+    _PRECISION = 2
 
-    def __init__(self, hsl=None):
-        if hsl is None:
-            self.hsl = (0, 0, 0)
+    def __init__(self, hsl=None, rgb=None, hsv=None):
+        for color_spc in ['hsl', 'rgb', 'hsv']:
+            if locals()[color_spc] is not None:
+                setattr(self, color_spc, locals()[color_spc])
+                break
         else:
-            self.hsl = hsl
+            self.hsl = (0, 0, 0)
 
     @property
     def hsl(self):
@@ -20,18 +26,63 @@ class Color:
 
     @hsl.setter
     def hsl(self, values):
-        self._hsl = self._validate_basic(values, 'hsl')
+        self._hsl = Color._validate_basic(values, 'hsl')
+        self._rgb = Color._hsl_to_rgb(self.hsl)
+        self._hsv = Color._rgb_to_hsv(self.rgb)
+
+    @property
+    def hsv(self):
+        return self._hsv
+
+    @hsv.setter
+    def hsv(self, values):
+        self._hsv = Color._validate_basic(values, 'hsv')
+        self._rgb = Color._hsv_to_rgb(self.hsv)
+        self._hsl = Color._rgb_to_hsl(self.rgb)
+
+    @property
+    def rgb(self):
+        return self._rgb
+
+    @rgb.setter
+    def rgb(self, values):
+        self._rgb = Color._validate_basic(values, 'rgb')
+        self._hsl = Color._rgb_to_hsl(self.rgb)
+        self._hsv = Color._rgb_to_hsv(self.rgb)
 
     #  - - - - - - - -
 
-    def _validate_basic(self, values, color_spc):
+    @classmethod
+    def _hsl_to_rgb(cls, hsl):
+        (h, s, l) = hsl
+        return tuple(round(x * 255) for x in colorsys.hls_to_rgb(h, l, s))
+
+    @classmethod
+    def _rgb_to_hsl(cls, rgb):
+        (h, l, s) = colorsys.rgb_to_hls(*[x / 255 for x in rgb])
+        hsl = (h, s, l)
+        return tuple(round(x, cls._PRECISION) for x in hsl)
+
+    @classmethod
+    def _hsv_to_rgb(cls, hsv):
+        return tuple(round(x * 255) for x in colorsys.hsv_to_rgb(*hsv))
+
+    @classmethod
+    def _rgb_to_hsv(cls, rgb):
+        hsv = colorsys.rgb_to_hsv(*[x / 255 for x in rgb])
+        return tuple(round(x, cls._PRECISION) for x in hsv)
+
+    #  - - - - - - - -
+
+    @classmethod
+    def _validate_basic(cls, inp_values, color_spc):
         '''
         common validation func for hsl, hsv, rgb, ryb
         '''
-        a, b = self._RANGES[color_spc][0], self._RANGES[color_spc][1]
-        dtype = self._RANGES[color_spc][2]
+        a, b = cls._RANGES[color_spc][0], cls._RANGES[color_spc][1]
+        dtype = cls._RANGES[color_spc][2]
 
-        if not (isinstance(values, Iterable) and len(values) == 3):
+        if not (isinstance(inp_values, Iterable) and len(inp_values) == 3):
             raise TypeError(f'{color_spc} should be an Iterable with 3 items')
 
         def check_value(x, a, b, p):
@@ -40,7 +91,7 @@ class Color:
             if x < a or x > b:
                 raise ValueError(f'"{p}" should be in range {a}-{b}')
 
-        for x, param in zip(values, color_spc):
+        for x, param in zip(inp_values, color_spc):
             if x == -1:
                 continue
             if isinstance(x, Iterable):
@@ -53,21 +104,21 @@ class Color:
                 check_value(x, a, b, param)
 
         #  - - - - - - - -
-        gen_values = list()
-        for x in values:
+        values = list()
+        for x in inp_values:
             if dtype == float:
                 if x == -1:
-                    gen_values.append(round(random(), 3))
+                    values.append(round(random(), cls._PRECISION))
                 elif isinstance(x, Iterable):
-                    gen_values.append(round(uniform(x[0], x[1]), 3))
+                    values.append(round(uniform(x[0], x[1]), cls._PRECISION))
                 else:
-                    gen_values.append(float(x))
+                    values.append(float(x))
             else:
                 if x == -1:
-                    gen_values.append(randint(a, b))
+                    values.append(randint(a, b))
                 elif isinstance(x, Iterable):
-                    gen_values.append(randint(a, b))
+                    values.append(randint(x[0], x[1]))
                 else:
-                    gen_values.append(int(x))
+                    values.append(int(x))
 
-        return tuple(gen_values)
+        return tuple(values)
