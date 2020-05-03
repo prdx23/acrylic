@@ -1,3 +1,4 @@
+import re
 import colorsys
 from collections.abc import Iterable
 from random import random, uniform, randint
@@ -11,9 +12,10 @@ class Color:
         'rgb': (0, 255, int),
     }
     _PRECISION = 2
+    _HEX_REGEX = re.compile(r'^[#]?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$')
 
-    def __init__(self, hsl=None, rgb=None, hsv=None):
-        for color_spc in ['hsl', 'rgb', 'hsv']:
+    def __init__(self, hsl=None, rgb=None, hsv=None, hex=None):
+        for color_spc in ['hsl', 'rgb', 'hsv', 'hex']:
             if locals()[color_spc] is not None:
                 setattr(self, color_spc, locals()[color_spc])
                 break
@@ -26,9 +28,8 @@ class Color:
 
     @hsl.setter
     def hsl(self, values):
-        self._hsl = Color._validate_basic(values, 'hsl')
-        self._rgb = Color._hsl_to_rgb(self.hsl)
-        self._hsv = Color._rgb_to_hsv(self.rgb)
+        self._hsl = Color._validate(values, 'hsl')
+        self.rgb = Color._hsl_to_rgb(self.hsl)
 
     @property
     def hsv(self):
@@ -36,9 +37,8 @@ class Color:
 
     @hsv.setter
     def hsv(self, values):
-        self._hsv = Color._validate_basic(values, 'hsv')
-        self._rgb = Color._hsv_to_rgb(self.hsv)
-        self._hsl = Color._rgb_to_hsl(self.rgb)
+        self._hsv = Color._validate(values, 'hsv')
+        self.rgb = Color._hsv_to_rgb(self.hsv)
 
     @property
     def rgb(self):
@@ -46,9 +46,19 @@ class Color:
 
     @rgb.setter
     def rgb(self, values):
-        self._rgb = Color._validate_basic(values, 'rgb')
+        self._rgb = Color._validate(values, 'rgb')
         self._hsl = Color._rgb_to_hsl(self.rgb)
         self._hsv = Color._rgb_to_hsv(self.rgb)
+        self._hex = Color._rgb_to_hex(self.rgb)
+
+    @property
+    def hex(self):
+        return self._hex
+
+    @hex.setter
+    def hex(self, value):
+        self._hex = Color._validate_hex(value)
+        self.rgb = Color._hex_to_rgb(self.hex)
 
     #  - - - - - - - -
 
@@ -72,10 +82,18 @@ class Color:
         hsv = colorsys.rgb_to_hsv(*[x / 255 for x in rgb])
         return tuple(round(x, cls._PRECISION) for x in hsv)
 
+    @classmethod
+    def _hex_to_rgb(cls, hex_str):
+        return tuple(int(hex_str[x:x + 2], 16) for x in range(1, 7, 2))
+
+    @classmethod
+    def _rgb_to_hex(cls, rgb):
+        return f'#{"".join(f"{x:02X}" for x in rgb)}'.upper()
+
     #  - - - - - - - -
 
     @classmethod
-    def _validate_basic(cls, inp_values, color_spc):
+    def _validate(cls, inp_values, color_spc):
         '''
         common validation func for hsl, hsv, rgb, ryb
         '''
@@ -122,3 +140,14 @@ class Color:
                     values.append(int(x))
 
         return tuple(values)
+
+    @classmethod
+    def _validate_hex(cls, value):
+        if not isinstance(value, str):
+            raise TypeError('hex should be an string')
+
+        inp_hex = cls._HEX_REGEX.match(value)
+        if inp_hex is None:
+            raise ValueError(f'{value} is not a valid hex color')
+
+        return f'#{inp_hex.groups()[0].upper()}'
