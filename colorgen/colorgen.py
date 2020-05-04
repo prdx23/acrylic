@@ -1,17 +1,22 @@
 import re
 import colorsys
+from random import randint
+from collections import namedtuple
 from collections.abc import Iterable
-from random import random, uniform, randint
+
+
+Hsl = namedtuple('Hsl', 'h s l')
+Hsv = namedtuple('Hsv', 'h s v')
+Rgb = namedtuple('Rgb', 'r g b')
 
 
 class Color:
 
     _RANGES = {
-        'hsl': (0, 1, float),
-        'hsv': (0, 1, float),
-        'rgb': (0, 255, int),
+        'hsl': Hsl((0, 360), (0, 100), (0, 100)),
+        'hsv': Hsv((0, 360), (0, 100), (0, 100)),
+        'rgb': Rgb((0, 255), (0, 255), (0, 255)),
     }
-    _PRECISION = 2
     _HEX_REGEX = re.compile(r'^[#]?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$')
 
     def __init__(self, hsl=None, rgb=None, hsv=None, hex=None):
@@ -64,27 +69,31 @@ class Color:
 
     @classmethod
     def _hsl_to_rgb(cls, hsl):
-        (h, s, l) = hsl
-        return tuple(round(x * 255) for x in colorsys.hls_to_rgb(h, l, s))
+        max_vals = [x[1] for x in cls._RANGES['hsl']]
+        (h, s, l) = [x / m for x, m in zip(hsl, max_vals)]
+        return Rgb(*[round(x * 255) for x in colorsys.hls_to_rgb(h, l, s)])
 
     @classmethod
     def _rgb_to_hsl(cls, rgb):
+        max_vals = [x[1] for x in cls._RANGES['hsl']]
         (h, l, s) = colorsys.rgb_to_hls(*[x / 255 for x in rgb])
-        hsl = (h, s, l)
-        return tuple(round(x, cls._PRECISION) for x in hsl)
+        return Hsl(*[round(x * m) for x, m in zip((h, s, l), max_vals)])
 
     @classmethod
     def _hsv_to_rgb(cls, hsv):
-        return tuple(round(x * 255) for x in colorsys.hsv_to_rgb(*hsv))
+        max_vals = [x[1] for x in cls._RANGES['hsv']]
+        hsv_float = [x / m for x, m in zip(hsv, max_vals)]
+        return Rgb(*[round(x * 255) for x in colorsys.hsv_to_rgb(*hsv_float)])
 
     @classmethod
     def _rgb_to_hsv(cls, rgb):
+        max_vals = [x[1] for x in cls._RANGES['hsv']]
         hsv = colorsys.rgb_to_hsv(*[x / 255 for x in rgb])
-        return tuple(round(x, cls._PRECISION) for x in hsv)
+        return Hsv(*[round(x * m) for x, m in zip(hsv, max_vals)])
 
     @classmethod
     def _hex_to_rgb(cls, hex_str):
-        return tuple(int(hex_str[x:x + 2], 16) for x in range(1, 7, 2))
+        return Rgb(*[int(hex_str[x:x + 2], 16) for x in range(1, 7, 2)])
 
     @classmethod
     def _rgb_to_hex(cls, rgb):
@@ -97,49 +106,40 @@ class Color:
         '''
         common validation func for hsl, hsv, rgb, ryb
         '''
-        a, b = cls._RANGES[color_spc][0], cls._RANGES[color_spc][1]
-        dtype = cls._RANGES[color_spc][2]
+
+        def check_value(x, a, b, p, msg):
+            '''
+            helper func to test values in multiple places
+            '''
+            if not isinstance(x, int):
+                raise TypeError(f'{msg} not Int')
+            if x < a or x > b:
+                raise ValueError(f'{msg} not in range {a} <= {p} <= {b}')
+
+        values = list()
 
         if not (isinstance(inp_values, Iterable) and len(inp_values) == 3):
-            raise TypeError(f'{color_spc} should be an Iterable with 3 items')
-
-        def check_value(x, a, b, p):
-            if not (isinstance(x, float) or isinstance(x, int)):
-                raise TypeError(f'"{p}" should be a {dtype} in range {a}-{b}')
-            if x < a or x > b:
-                raise ValueError(f'"{p}" should be in range {a}-{b}')
+            raise TypeError(f'{color_spc} is not iterable with 3 items')
 
         for x, param in zip(inp_values, color_spc):
+            a, b = getattr(cls._RANGES[color_spc], param)
             if x == -1:
+                values.append(randint(a, b))
                 continue
-            if isinstance(x, Iterable):
+            if isinstance(x, Iterable) and not isinstance(x, str):
                 if len(x) < 2:
                     raise ValueError(
                         f'setting "{param}" from a range needs 2 values'
                     )
-                [check_value(y, a, b, f'"{param}" range') for y in x]
-            else:
-                check_value(x, a, b, param)
 
-        #  - - - - - - - -
-        values = list()
-        for x in inp_values:
-            if dtype == float:
-                if x == -1:
-                    values.append(round(random(), cls._PRECISION))
-                elif isinstance(x, Iterable):
-                    values.append(round(uniform(x[0], x[1]), cls._PRECISION))
-                else:
-                    values.append(float(x))
+                err_msg = f'values given in range for "{param}" are'
+                [check_value(y, a, b, param, err_msg) for y in x]
+                values.append(randint(x[0], x[1]))
             else:
-                if x == -1:
-                    values.append(randint(a, b))
-                elif isinstance(x, Iterable):
-                    values.append(randint(x[0], x[1]))
-                else:
-                    values.append(int(x))
+                check_value(x, a, b, param, f'"{param}" is')
+                values.append(x)
 
-        return tuple(values)
+        return globals()[cls._RANGES[color_spc].__class__.__name__](*values)
 
     @classmethod
     def _validate_hex(cls, value):

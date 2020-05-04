@@ -1,5 +1,5 @@
 import unittest
-from random import uniform, randint
+from random import randint
 
 from colorgen.colorgen import Color
 
@@ -12,6 +12,7 @@ class TestColor(unittest.TestCase):
 
     def test_validation(self):
         with self.assertRaises(TypeError):
+            _ = Color(hsl=(5, 0.5, 1))
             _ = Color(hsl='test')
             _ = Color(hsl=1)
             _ = Color(hsl=('test', 1, 0.5))
@@ -20,11 +21,13 @@ class TestColor(unittest.TestCase):
             _ = Color(hsl=(0, 0.5))
 
         with self.assertRaises(ValueError):
-            _ = Color(hsl=(0.5, 1, 5))
-            _ = Color(hsl=(1, 5, 0.5))
-            _ = Color(hsl=(5, 0.5, 1))
-            _ = Color(hsl=(0, (1, 5), 5))
-            _ = Color(hsl=(0, (5, 1), 5))
+            _ = Color(hsl=(0, 1, 101))
+            _ = Color(hsl=(1, 101, 0))
+            _ = Color(hsl=(361, 0, 1))
+            _ = Color(hsl=(0, (1, 101), 5))
+            _ = Color(hsl=(0, (101, 1), 5))
+            _ = Color(hsl=((1, 361), 1, 5))
+            _ = Color(hsl=((361, 1), 1, 5))
 
         with self.assertRaises(TypeError):
             _ = Color(hex=1)
@@ -36,26 +39,27 @@ class TestColor(unittest.TestCase):
             _ = Color(hex='#0000xx')
 
     def test_hsl(self):
-        new_color = Color(hsl=(0, 1, 0.5))
-        self.assertEqual(new_color.hsl, (0, 1, 0.5))
+        new_color = Color(hsl=(180, 40, 60))
+        self.assertEqual(new_color.hsl, (180, 40, 60))
+        self.assertEqual(new_color.hsl.h, 180)
+        self.assertEqual(new_color.hsl.s, 40)
+        self.assertEqual(new_color.hsl.l, 60)
 
         for _ in range(20):
-            new_color = Color(hsl=(-1, 0.4, 0.6))
+            new_color = Color(hsl=(-1, -1, 60))
             values = new_color.hsl
-            self.assertEqual(values[1], 0.4)
-            self.assertEqual(values[2], 0.6)
-            self.assertTrue(isinstance(values[0], float))
-            self.assertTrue(0 <= values[0] <= 1)
+            self.assertEqual(values.l, 60)
+            self.assertTrue(0 <= values.h <= 360)
+            self.assertTrue(0 <= values.s <= 100)
 
         for _ in range(20):
-            a = round(uniform(0, 0.5), Color._PRECISION)
-            b = round(uniform(0.5, 1), Color._PRECISION)
-            new_color = Color(hsl=((a, b), 0.4, 0.6))
+            a, b = randint(0, 180), randint(180, 360)
+            c, d = randint(0, 40), randint(60, 100)
+            new_color = Color(hsl=((a, b), (c, d), 60))
             values = new_color.hsl
-            self.assertEqual(values[1], 0.4)
-            self.assertEqual(values[2], 0.6)
-            self.assertTrue(isinstance(values[0], float))
-            self.assertTrue(a <= values[0] <= b)
+            self.assertEqual(values.l, 60)
+            self.assertTrue(a <= values.h <= b)
+            self.assertTrue(c <= values.s <= d)
 
     def test_rgb(self):
         new_color = Color(rgb=(24, 0, 255))
@@ -66,7 +70,6 @@ class TestColor(unittest.TestCase):
             values = new_color.rgb
             self.assertEqual(values[1], 42)
             self.assertEqual(values[2], 62)
-            self.assertTrue(isinstance(values[0], int))
             self.assertTrue(0 <= values[0] <= 255)
 
         for _ in range(20):
@@ -75,7 +78,6 @@ class TestColor(unittest.TestCase):
             values = new_color.rgb
             self.assertEqual(values[1], 42)
             self.assertEqual(values[2], 62)
-            self.assertTrue(isinstance(values[0], int))
             self.assertTrue(a <= values[0] <= b)
 
     def test_hex(self):
@@ -89,12 +91,12 @@ class TestColor(unittest.TestCase):
 
     def test_conversion(self):
         def test_all(color):
-            self.assertEqual(color.hsl, (0.5, 0.9, 0.6))
+            self.assertEqual(color.hsl, (180, 90, 60))
             self.assertEqual(color.rgb, (61, 245, 245))
-            self.assertEqual(color.hsv, (0.5, 0.75, 0.96))
+            self.assertEqual(color.hsv, (180, 75, 96))
             self.assertEqual(color.hex, '#3DF5F5')
 
-        test_all(Color(hsl=(0.5, 0.9, 0.6)))
+        test_all(Color(hsl=(180, 90, 60)))
         test_all(Color(rgb=(61, 245, 245)))
-        test_all(Color(hsv=(0.5, 0.75, 0.96)))
+        test_all(Color(hsv=(180, 75, 96)))
         test_all(Color(hex='#3DF5F5'))
