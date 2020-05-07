@@ -9,6 +9,10 @@ class TestColor(unittest.TestCase):
     def test_basic(self):
         new_color = Color()
         self.assertEqual(new_color.hsl, (0, 0, 0))
+        new_color.hsl = (180, 90, 60)
+        self.assertEqual(new_color.hsl.h, 180)
+        self.assertEqual(new_color.hsl.s, 90)
+        self.assertEqual(new_color.hsl.l, 60)
 
     def test_validation(self):
         with self.assertRaises(TypeError):

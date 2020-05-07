@@ -8,6 +8,7 @@ from collections.abc import Iterable
 Hsl = namedtuple('Hsl', 'h s l')
 Hsv = namedtuple('Hsv', 'h s v')
 Rgb = namedtuple('Rgb', 'r g b')
+Ryb = namedtuple('Ryb', 'r y b')
 
 
 class Color:
@@ -16,11 +17,12 @@ class Color:
         'hsl': Hsl((0, 360), (0, 100), (0, 100)),
         'hsv': Hsv((0, 360), (0, 100), (0, 100)),
         'rgb': Rgb((0, 255), (0, 255), (0, 255)),
+        'ryb': Ryb((0, 255), (0, 255), (0, 255)),
     }
     _HEX_REGEX = re.compile(r'^[#]?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$')
 
-    def __init__(self, hsl=None, rgb=None, hsv=None, hex=None):
-        for color_spc in ['hsl', 'rgb', 'hsv', 'hex']:
+    def __init__(self, hsl=None, rgb=None, hsv=None, hex=None, ryb=None):
+        for color_spc in ['hsl', 'rgb', 'hsv', 'hex', 'ryb']:
             if locals()[color_spc] is not None:
                 setattr(self, color_spc, locals()[color_spc])
                 break
@@ -55,6 +57,7 @@ class Color:
         self._hsl = Color._rgb_to_hsl(self.rgb)
         self._hsv = Color._rgb_to_hsv(self.rgb)
         self._hex = Color._rgb_to_hex(self.rgb)
+        self._ryb = Color._rgb_to_ryb(self.rgb)
 
     @property
     def hex(self):
@@ -64,6 +67,15 @@ class Color:
     def hex(self, value):
         self._hex = Color._validate_hex(value)
         self.rgb = Color._hex_to_rgb(self.hex)
+
+    @property
+    def ryb(self):
+        return self._ryb
+
+    @ryb.setter
+    def ryb(self, values):
+        self._ryb = Color._validate(values, 'ryb')
+        self.rgb = Color._ryb_to_rgb(self.ryb)
 
     #  - - - - - - - -
 
@@ -98,6 +110,52 @@ class Color:
     @classmethod
     def _rgb_to_hex(cls, rgb):
         return f'#{"".join(f"{x:02X}" for x in rgb)}'.upper()
+
+    @classmethod
+    def _rgb_to_ryb(cls, rgb):
+        rgb_r, rgb_g, rgb_b = [x / 255 for x in rgb]
+
+        white = min(rgb_r, rgb_g, rgb_b)
+        black = min(1 - rgb_r, 1 - rgb_g, 1 - rgb_b)
+        (rgb_r, rgb_g, rgb_b) = (x - white for x in (rgb_r, rgb_g, rgb_b))
+
+        yellow = min(rgb_r, rgb_g)
+        ryb_r = rgb_r - yellow
+        ryb_y = (yellow + rgb_g) / 2
+        ryb_b = (rgb_b + rgb_g - yellow) / 2
+
+        norm = 0
+        if max(rgb_r, rgb_g, rgb_b) != 0:
+            norm = max(ryb_r, ryb_y, ryb_b) / max(rgb_r, rgb_g, rgb_b)
+        ryb_r = ryb_r / norm if norm > 0 else ryb_r
+        ryb_y = ryb_y / norm if norm > 0 else ryb_y
+        ryb_b = ryb_b / norm if norm > 0 else ryb_b
+
+        (ryb_r, ryb_y, ryb_b) = (x + black for x in (ryb_r, ryb_y, ryb_b))
+        return Ryb(*[round(x * 255) for x in (ryb_r, ryb_y, ryb_b)])
+
+    @classmethod
+    def _ryb_to_rgb(cls, ryb):
+        ryb_r, ryb_y, ryb_b = [x / 255 for x in ryb]
+
+        black = min(ryb_r, ryb_y, ryb_b)
+        white = min(1 - ryb_r, 1 - ryb_y, 1 - ryb_b)
+        (ryb_r, ryb_y, ryb_b) = (x - black for x in (ryb_r, ryb_y, ryb_b))
+
+        green = min(ryb_y, ryb_b)
+        rgb_r = ryb_r + ryb_y - green
+        rgb_g = ryb_y + green
+        rgb_b = 2 * (ryb_b - green)
+
+        norm = 0
+        if max(ryb_r, ryb_y, ryb_b) != 0:
+            norm = max(rgb_r, rgb_g, rgb_b) / max(ryb_r, ryb_y, ryb_b)
+        rgb_r = rgb_r / norm if norm > 0 else rgb_r
+        rgb_g = rgb_g / norm if norm > 0 else rgb_g
+        rgb_b = rgb_b / norm if norm > 0 else rgb_b
+
+        (rgb_r, rgb_g, rgb_b) = (x + white for x in (rgb_r, rgb_g, rgb_b))
+        return Rgb(*[round(x * 255) for x in (rgb_r, rgb_g, rgb_b)])
 
     #  - - - - - - - -
 
@@ -151,3 +209,91 @@ class Color:
             raise ValueError(f'{value} is not a valid hex color')
 
         return f'#{inp_hex.groups()[0].upper()}'
+
+
+#  def interpolate(OldMin, OldMax, NewMin, NewMax):
+#      OldRange = (OldMax - OldMin)
+#      NewRange = (NewMax - NewMin)
+#      return lambda x: (((x - OldMin) * NewRange) / OldRange) + NewMin
+
+
+def harmony():
+    colors = [Color(hsv=(x, 58, 98)) for x in range(0, 360, 5)]
+    #  print(len(colors))
+    for color in list(colors):
+        #  print(color.ryb, Color._ryb_to_rgb(color.rgb))
+        #  c_ryb = Color(rgb=Color._ryb_to_rgb(color.rgb))
+        c_ryb = Color(ryb=color.rgb)
+        c_ryb.hsv = (c_ryb.hsv.h, c_ryb.hsv.v, c_ryb.hsv.s)
+        #  print(c_ryb.hsv)
+        colors.append(c_ryb)
+
+    return colors
+    #  fuzzy = 0
+    #  fuzzy = 20
+    fuzzy = 30
+
+    colors = []
+    h = randint(0, 360)
+    #  for _ in range(1):
+    for a in range(15, 75, 5):
+        #  a = (15, 75)
+        h2 = randint(h - (fuzzy // 2), h + (fuzzy // 2)) % 360
+        base = Color(hsv=(h2, a, 100))
+        #
+        new = [
+            (+0, +10, -30), (+0, -10, +0),
+            (+180, +0, +0), (+180, +20, -30)
+        ]
+
+        new = [
+            (+0, +10, -30), (-120, -10, +0),
+            (+120, +0, +0), (+180, +20, -30)
+        ]
+
+
+
+        #  new = [
+        #      (+180, -0.25, +0.10), (+180, -0.35, -0.10),
+        #      (+0, -0.15, -0.15), (+0, -0.20, -0.40)
+        #  ]
+        #  hue, s, l = base.hsl[0] * 360, base.hsl[1], base.hsl[2]
+        for i, vals in enumerate(new):
+            #  new_vals = [base.hsv[x] + vals[x] for x in range(3)]
+            #  new_vals = [x % 360 if i == 0 else x % 101
+            #              for i, x in enumerate(new_vals)]
+            new_vals = []
+            for j, (x, y) in enumerate(zip(vals, [360, 100, 100])):
+                new = base.hsv[j] + x + randint(-fuzzy // 2, fuzzy // 2)
+                if j == 0:
+                    h3 = new
+                    new = new % y
+                else:
+                    new = min(new, y)
+                    new = max(0, new)
+                #  print(new)
+                #  if j == 2:
+                #      new = (base.hsv[j] + x) % 101
+                new_vals.append(new)
+
+            print(new_vals, base.hsv[0] + vals[0], h3, (base.hsv[0] + vals[0])- h3)
+
+            #  new_vals[0] = (base.hsv.h + vals[0]) % 360
+            #  new_vals[0] = randint(new_vals[0] - fuzzy, new_vals[0] + fuzzy)
+            #
+            #  new_vals[1] = (base.hsv.s + vals[1]) % 100
+            #  new_vals[1] = randint(new_vals[1] - fuzzy, new_vals[1] + fuzzy)
+            #
+            #  new_vals[2] = (base.hsv.s + vals[2]) % 100
+            #  new_vals[2] = randint(new_vals[2] - fuzzy, new_vals[2] + fuzzy)
+            #  print(new_vals)
+
+            colors.append(Color(hsv=new_vals))
+            if i == 0:
+                colors.append(base)
+        #  print(len(colors))
+        print('-=-=-=-=-=-=-')
+
+
+
+    return colors
