@@ -181,15 +181,16 @@ class Color:
 
         for x, param in zip(inp_values, color_spc):
             a, b = getattr(cls._RANGES[color_spc], param)
+
             if x == -1:
                 values.append(randint(a, b))
                 continue
+
             if isinstance(x, Iterable) and not isinstance(x, str):
                 if len(x) < 2:
                     raise ValueError(
                         f'setting "{param}" from a range needs 2 values'
                     )
-
                 err_msg = f'values given in range for "{param}" are'
                 [check_value(y, a, b, param, err_msg) for y in x]
                 values.append(randint(x[0], x[1]))
@@ -210,6 +211,58 @@ class Color:
 
         return f'#{inp_hex.groups()[0].upper()}'
 
+    def _ryb_mode(self):
+        new_color = Color(ryb=self.rgb)
+        new_color.hsv = (new_color.hsv.h, self.hsv.s, self.hsv.v)
+        return new_color
+
+
+def palette():
+    ryb_mode = True
+    fuzzy = randint(15, 30) if randint(0, 5) else 0
+    print(fuzzy)
+    scheme = 2
+
+    deltas = {
+        2: [
+            Hsv(+0, +10, -30), Hsv(+0, -10, +0),
+            Hsv(+180, +0, +0), Hsv(+180, +20, -30)
+        ],
+    }
+
+    base = Color(hsv=(-1, (10, 70), 98))
+    colors = list()
+
+    for i, delta in enumerate(deltas[scheme]):
+        hue = (base.hsv.h + delta.h + randint(-fuzzy, fuzzy)) % 360
+
+        sat = base.hsv.s + delta.s + randint(-fuzzy // 2, fuzzy // 3)
+        sat = min(max(5, sat), 100)
+
+        val = base.hsv.v + delta.v + randint(-fuzzy // 2, fuzzy // 3)
+        val = min(max(5, val), 100)
+
+        color = Color(hsv=(hue, sat, val))
+        if ryb_mode:
+            color = color._ryb_mode()
+
+        colors.append(color)
+        print(color.hsv)
+        if i == (len(deltas[scheme]) // 2) - 1:
+            if ryb_mode:
+                colors.append(base._ryb_mode())
+                print(base._ryb_mode().hsv)
+            else:
+                colors.append(base)
+                print(base.hsv)
+
+    return colors
+
+    #  new = [
+    #      (+0, +10, -30), (-120, -10, +0),
+    #      (+120, +0, +0), (+180, +20, -30)
+    #  ]
+
 
 #  def interpolate(OldMin, OldMax, NewMin, NewMax):
 #      OldRange = (OldMax - OldMin)
@@ -226,74 +279,6 @@ def harmony():
         c_ryb = Color(ryb=color.rgb)
         c_ryb.hsv = (c_ryb.hsv.h, c_ryb.hsv.v, c_ryb.hsv.s)
         #  print(c_ryb.hsv)
-        colors.append(c_ryb)
-
-    return colors
-    #  fuzzy = 0
-    #  fuzzy = 20
-    fuzzy = 30
-
-    colors = []
-    h = randint(0, 360)
-    #  for _ in range(1):
-    for a in range(15, 75, 5):
-        #  a = (15, 75)
-        h2 = randint(h - (fuzzy // 2), h + (fuzzy // 2)) % 360
-        base = Color(hsv=(h2, a, 100))
-        #
-        new = [
-            (+0, +10, -30), (+0, -10, +0),
-            (+180, +0, +0), (+180, +20, -30)
-        ]
-
-        new = [
-            (+0, +10, -30), (-120, -10, +0),
-            (+120, +0, +0), (+180, +20, -30)
-        ]
-
-
-
-        #  new = [
-        #      (+180, -0.25, +0.10), (+180, -0.35, -0.10),
-        #      (+0, -0.15, -0.15), (+0, -0.20, -0.40)
-        #  ]
-        #  hue, s, l = base.hsl[0] * 360, base.hsl[1], base.hsl[2]
-        for i, vals in enumerate(new):
-            #  new_vals = [base.hsv[x] + vals[x] for x in range(3)]
-            #  new_vals = [x % 360 if i == 0 else x % 101
-            #              for i, x in enumerate(new_vals)]
-            new_vals = []
-            for j, (x, y) in enumerate(zip(vals, [360, 100, 100])):
-                new = base.hsv[j] + x + randint(-fuzzy // 2, fuzzy // 2)
-                if j == 0:
-                    h3 = new
-                    new = new % y
-                else:
-                    new = min(new, y)
-                    new = max(0, new)
-                #  print(new)
-                #  if j == 2:
-                #      new = (base.hsv[j] + x) % 101
-                new_vals.append(new)
-
-            print(new_vals, base.hsv[0] + vals[0], h3, (base.hsv[0] + vals[0])- h3)
-
-            #  new_vals[0] = (base.hsv.h + vals[0]) % 360
-            #  new_vals[0] = randint(new_vals[0] - fuzzy, new_vals[0] + fuzzy)
-            #
-            #  new_vals[1] = (base.hsv.s + vals[1]) % 100
-            #  new_vals[1] = randint(new_vals[1] - fuzzy, new_vals[1] + fuzzy)
-            #
-            #  new_vals[2] = (base.hsv.s + vals[2]) % 100
-            #  new_vals[2] = randint(new_vals[2] - fuzzy, new_vals[2] + fuzzy)
-            #  print(new_vals)
-
-            colors.append(Color(hsv=new_vals))
-            if i == 0:
-                colors.append(base)
-        #  print(len(colors))
-        print('-=-=-=-=-=-=-')
-
-
+        colors.append(color._ryb_mode())
 
     return colors
