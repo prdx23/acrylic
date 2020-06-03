@@ -1,6 +1,6 @@
 import re
 import colorsys
-from random import randint
+from random import randint, shuffle, choice
 from collections import namedtuple
 from collections.abc import Iterable
 
@@ -219,21 +219,41 @@ class Color:
 
 def palette():
     ryb_mode = True
-    fuzzy = randint(15, 30) if randint(0, 5) else 0
+    #  ryb_mode = False
+    #  fuzzy = randint(5, 25) if randint(0, 5) else 0
+    fuzzy = None
+    scheme = 1
+
+    if scheme == 1:
+        #  analogous
+        rnd_v = [-0, -5, -10, -15]
+        deltas = [
+            Hsv(-30, randint(-10, 5), choice(rnd_v)),
+            Hsv(-15, randint(-10, 5), choice(rnd_v)),
+            Hsv(+15, randint(-10, 5), choice(rnd_v)),
+            Hsv(+30, randint(-10, 5), choice(rnd_v))
+        ]
+        if fuzzy is None:
+            fuzzy = randint(0, 20) if randint(0, 5) else 0
+
+    elif scheme == 2:
+        #  complementary
+        rnd_s = [+10, +20, -10, -20]
+        deltas = [
+            Hsv(+0, choice(rnd_s), -30),
+            Hsv(+0, -10, +0),
+            Hsv(+180, +0, +0),
+            Hsv(+180, choice(rnd_s), -30)
+        ]
+        if fuzzy is None:
+            fuzzy = randint(5, 25) if randint(0, 5) else 0
     print(fuzzy)
-    scheme = 2
 
-    deltas = {
-        2: [
-            Hsv(+0, +10, -30), Hsv(+0, -10, +0),
-            Hsv(+180, +0, +0), Hsv(+180, +20, -30)
-        ],
-    }
-
-    base = Color(hsv=(-1, (10, 70), 98))
+    base = Color(hsv=(-1, (10, 75), 98))
     colors = list()
 
-    for i, delta in enumerate(deltas[scheme]):
+    for i, delta in enumerate(deltas):
+        print('-->', delta)
         hue = (base.hsv.h + delta.h + randint(-fuzzy, fuzzy)) % 360
 
         sat = base.hsv.s + delta.s + randint(-fuzzy // 2, fuzzy // 3)
@@ -248,7 +268,7 @@ def palette():
 
         colors.append(color)
         print(color.hsv)
-        if i == (len(deltas[scheme]) // 2) - 1:
+        if i == (len(deltas) // 2) - 1:
             if ryb_mode:
                 colors.append(base._ryb_mode())
                 print(base._ryb_mode().hsv)
@@ -256,6 +276,7 @@ def palette():
                 colors.append(base)
                 print(base.hsv)
 
+    #  shuffle(colors)
     return colors
 
     #  new = [
