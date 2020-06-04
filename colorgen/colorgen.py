@@ -1,6 +1,6 @@
 import re
 import colorsys
-from random import randint, shuffle, choice
+from random import randint
 from collections import namedtuple
 from collections.abc import Iterable
 
@@ -18,16 +18,51 @@ class Color:
         'hsv': Hsv((0, 360), (0, 100), (0, 100)),
         'rgb': Rgb((0, 255), (0, 255), (0, 255)),
         'ryb': Ryb((0, 255), (0, 255), (0, 255)),
+        'hex': re.compile(r'^[#]?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$'),
     }
-    _HEX_REGEX = re.compile(r'^[#]?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$')
 
     def __init__(self, hsl=None, rgb=None, hsv=None, hex=None, ryb=None):
-        for color_spc in ['hsl', 'rgb', 'hsv', 'hex', 'ryb']:
+        for color_spc in list(self._RANGES.keys()):
+            if locals()[color_spc] is not None:
+                setattr(self, color_spc, locals()[color_spc])
+                self.default_color_space = color_spc
+                break
+        else:
+            self.rgb = (0, 0, 0)
+            self.default_color_space = 'rgb'
+
+    def update(self, hsl=None, rgb=None, hsv=None, hex=None, ryb=None):
+        for color_spc in list(self._RANGES.keys()):
             if locals()[color_spc] is not None:
                 setattr(self, color_spc, locals()[color_spc])
                 break
+        return self
+
+    def __repr__(self):
+        if self.default_color_space == 'hex':
+            return f'Color(hex={repr(self.hex)})'
         else:
-            self.hsl = (0, 0, 0)
+            values = tuple(getattr(self, self.default_color_space))
+            return f'Color({self.default_color_space}={repr(values)})'
+
+    def __str__(self):
+        if self.default_color_space == 'hex':
+            return f'hex={self.hex}'
+        else:
+            values = getattr(self, self.default_color_space)
+            color_space = self.default_color_space
+            return ', '.join(f'{x}={y}' for x, y in zip(color_space, values))
+
+    def __eq__(self, other):
+        return all([
+            self.hsl == other.hsl,
+            self.rgb == other.rgb,
+            self.hsv == other.hsv,
+            self.hex == other.hex,
+            self.ryb == other.ryb
+        ])
+
+    #  - - - - - - - -
 
     @property
     def hsl(self):
@@ -76,6 +111,16 @@ class Color:
     def ryb(self, values):
         self._ryb = Color._validate(values, 'ryb')
         self.rgb = Color._ryb_to_rgb(self.ryb)
+
+    @property
+    def default_color_space(self):
+        return self._default_color_space
+
+    @default_color_space.setter
+    def default_color_space(self, value):
+        if value.lower() not in self._RANGES.keys():
+            raise ValueError('Not a valid Color Space')
+        self._default_color_space = value.lower()
 
     #  - - - - - - - -
 
@@ -205,7 +250,7 @@ class Color:
         if not isinstance(value, str):
             raise TypeError('hex should be an string')
 
-        inp_hex = cls._HEX_REGEX.match(value)
+        inp_hex = cls._RANGES['hex'].match(value)
         if inp_hex is None:
             raise ValueError(f'{value} is not a valid hex color')
 

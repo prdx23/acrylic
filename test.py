@@ -14,6 +14,27 @@ class TestColor(unittest.TestCase):
         self.assertEqual(new_color.hsl.s, 90)
         self.assertEqual(new_color.hsl.l, 60)
 
+        values = new_color.update(hsl=(270, 20, 80)).hsl
+        self.assertEqual(values, (270, 20, 80))
+
+    def test_dunder(self):
+        new_color = Color(hsl=(180, 90, 60))
+        self.assertEqual(repr(new_color), 'Color(hsl=(180, 90, 60))')
+        self.assertEqual(str(new_color), 'h=180, s=90, l=60')
+
+        new_color = Color(rgb=(61, 245, 245))
+        self.assertEqual(repr(new_color), 'Color(rgb=(61, 245, 245))')
+        self.assertEqual(str(new_color), 'r=61, g=245, b=245')
+
+        new_color = Color(hex='#3DF5F5')
+        self.assertEqual(repr(new_color), "Color(hex='#3DF5F5')")
+        self.assertEqual(str(new_color), "hex=#3DF5F5")
+
+        self.assertEqual(new_color, Color(hsl=(180, 90, 60)))
+        self.assertEqual(new_color, Color(rgb=(61, 245, 245)))
+        self.assertEqual(new_color, Color(hex='#3DF5F5'))
+        self.assertNotEqual(new_color, Color(rgb=(62, 245, 245)))
+
     def test_validation(self):
         with self.assertRaises(TypeError):
             _ = Color(hsl=(5, 0.5, 1))
@@ -99,8 +120,10 @@ class TestColor(unittest.TestCase):
             self.assertEqual(color.rgb, (61, 245, 245))
             self.assertEqual(color.hsv, (180, 75, 96))
             self.assertEqual(color.hex, '#3DF5F5')
+            self.assertEqual(color.ryb, (10, 102, 194))
 
         test_all(Color(hsl=(180, 90, 60)))
         test_all(Color(rgb=(61, 245, 245)))
         test_all(Color(hsv=(180, 75, 96)))
         test_all(Color(hex='#3DF5F5'))
+        test_all(Color(ryb=(10, 102, 194)))
