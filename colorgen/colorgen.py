@@ -1,6 +1,6 @@
 import re
 import colorsys
-from random import randint
+from random import randint, uniform
 from collections import namedtuple
 from collections.abc import Iterable
 
@@ -10,143 +10,134 @@ Hsv = namedtuple('Hsv', 'h s v')
 Rgb = namedtuple('Rgb', 'r g b')
 Ryb = namedtuple('Ryb', 'r y b')
 
+RANDOM = -1
+
+
+def property_factory(attr):
+
+    def getter(instance):
+        return getattr(instance, f'_{attr}')
+
+    def setter(instance, *args, **kwargs):
+        raise AttributeError(f'{type(instance).__name__}.{attr} is ReadOnly')
+
+    return property(getter, setter)
+
 
 class Color:
+    __slots__ = ('_hsl', '_hsv', '_rgb', '_hex', '_ryb', '_default_colorspace')
 
-    _RANGES = {
-        'hsl': Hsl((0, 360), (0, 100), (0, 100)),
-        'hsv': Hsv((0, 360), (0, 100), (0, 100)),
+    hsl = property_factory('hsl')
+    hsv = property_factory('hsv')
+    rgb = property_factory('rgb')
+    ryb = property_factory('ryb')
+    hex = property_factory('hex')
+
+    LIMITS = {
+        'hsl': Hsl((0, 360.0), (0, 100.0), (0, 100.0)),
+        'hsv': Hsv((0, 360.0), (0, 100.0), (0, 100.0)),
         'rgb': Rgb((0, 255), (0, 255), (0, 255)),
         'ryb': Ryb((0, 255), (0, 255), (0, 255)),
         'hex': re.compile(r'^[#]?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$'),
     }
+    PRECISION = 2
 
     def __init__(self, hsl=None, rgb=None, hsv=None, hex=None, ryb=None):
-        for color_spc in list(self._RANGES.keys()):
-            if locals()[color_spc] is not None:
-                setattr(self, color_spc, locals()[color_spc])
-                self.default_color_space = color_spc
+        validated_values = None
+
+        #  find which color space was given and validate its input
+        for color_spc in list(self.LIMITS.keys()):
+            values = locals()[color_spc]
+            if values is not None:
+                if color_spc == 'hex':
+                    validated_values = Color._validate_hex(values)
+                else:
+                    validated_values = Color._validate(values, color_spc)
+
+                self.default_colorspace = color_spc
                 break
+
+        #  if no params given, assume rgb(0, 0, 0)
+        if validated_values is None:
+            validated_values = Color._validate((0, 0, 0), 'rgb')
+            self.default_colorspace = 'rgb'
+
+        #  if a color space other than rgb was given, convert to rgb
+        if self.default_colorspace != 'rgb':
+            to_rgb = getattr(Color, f'_{self.default_colorspace}_to_rgb')
+            self._rgb = to_rgb(validated_values)
         else:
-            self.rgb = (0, 0, 0)
-            self.default_color_space = 'rgb'
+            self._rgb = validated_values
 
-    def update(self, hsl=None, rgb=None, hsv=None, hex=None, ryb=None):
-        for color_spc in list(self._RANGES.keys()):
-            if locals()[color_spc] is not None:
-                setattr(self, color_spc, locals()[color_spc])
-                break
-        return self
-
-    def __repr__(self):
-        if self.default_color_space == 'hex':
-            return f'Color(hex={repr(self.hex)})'
-        else:
-            values = tuple(getattr(self, self.default_color_space))
-            return f'Color({self.default_color_space}={repr(values)})'
-
-    def __str__(self):
-        if self.default_color_space == 'hex':
-            return f'hex={self.hex}'
-        else:
-            values = getattr(self, self.default_color_space)
-            color_space = self.default_color_space
-            return ', '.join(f'{x}={y}' for x, y in zip(color_space, values))
-
-    def __eq__(self, other):
-        return all([
-            self.hsl == other.hsl,
-            self.rgb == other.rgb,
-            self.hsv == other.hsv,
-            self.hex == other.hex,
-            self.ryb == other.ryb
-        ])
-
-    #  - - - - - - - -
-
-    @property
-    def hsl(self):
-        return self._hsl
-
-    @hsl.setter
-    def hsl(self, values):
-        self._hsl = Color._validate(values, 'hsl')
-        self.rgb = Color._hsl_to_rgb(self.hsl)
-
-    @property
-    def hsv(self):
-        return self._hsv
-
-    @hsv.setter
-    def hsv(self, values):
-        self._hsv = Color._validate(values, 'hsv')
-        self.rgb = Color._hsv_to_rgb(self.hsv)
-
-    @property
-    def rgb(self):
-        return self._rgb
-
-    @rgb.setter
-    def rgb(self, values):
-        self._rgb = Color._validate(values, 'rgb')
+        #  convert from rgb to all others, including circling back rgb
         self._hsl = Color._rgb_to_hsl(self.rgb)
+        self._rgb = Color._hsl_to_rgb(self.hsl)
         self._hsv = Color._rgb_to_hsv(self.rgb)
         self._hex = Color._rgb_to_hex(self.rgb)
         self._ryb = Color._rgb_to_ryb(self.rgb)
 
+    def __repr__(self):
+        cls_name = type(self).__name__
+        if self.default_colorspace == 'hex':
+            return f'{cls_name}(hex={repr(self.hex)})'
+        else:
+            values = tuple(getattr(self, self.default_colorspace))
+            return f'{cls_name}({self.default_colorspace}={repr(values)})'
+
+    def __str__(self):
+        if self.default_colorspace == 'hex':
+            return f'hex={self.hex!r}'
+        else:
+            values = getattr(self, self.default_colorspace)
+            color_space = self.default_colorspace
+            return ', '.join(f'{x}={y!r}' for x, y in zip(color_space, values))
+
+    def __eq__(self, other):
+        if isinstance(other, Color):
+            return all([
+                self.hsl == other.hsl,
+                self.rgb == other.rgb,
+                self.hsv == other.hsv,
+                self.hex == other.hex,
+                self.ryb == other.ryb
+            ])
+        return NotImplemented
+
     @property
-    def hex(self):
-        return self._hex
+    def default_colorspace(self):
+        return self._default_colorspace
 
-    @hex.setter
-    def hex(self, value):
-        self._hex = Color._validate_hex(value)
-        self.rgb = Color._hex_to_rgb(self.hex)
-
-    @property
-    def ryb(self):
-        return self._ryb
-
-    @ryb.setter
-    def ryb(self, values):
-        self._ryb = Color._validate(values, 'ryb')
-        self.rgb = Color._ryb_to_rgb(self.ryb)
-
-    @property
-    def default_color_space(self):
-        return self._default_color_space
-
-    @default_color_space.setter
-    def default_color_space(self, value):
-        if value.lower() not in self._RANGES.keys():
+    @default_colorspace.setter
+    def default_colorspace(self, value):
+        if value.lower() not in self.LIMITS.keys():
             raise ValueError('Not a valid Color Space')
-        self._default_color_space = value.lower()
+        self._default_colorspace = value.lower()
 
     #  - - - - - - - -
 
     @classmethod
     def _hsl_to_rgb(cls, hsl):
-        max_vals = [x[1] for x in cls._RANGES['hsl']]
+        max_vals = [x[1] for x in cls.LIMITS['hsl']]
         (h, s, l) = [x / m for x, m in zip(hsl, max_vals)]
         return Rgb(*[round(x * 255) for x in colorsys.hls_to_rgb(h, l, s)])
 
     @classmethod
     def _rgb_to_hsl(cls, rgb):
-        max_vals = [x[1] for x in cls._RANGES['hsl']]
+        max_vals, prec = [x[1] for x in cls.LIMITS['hsl']], cls.PRECISION
         (h, l, s) = colorsys.rgb_to_hls(*[x / 255 for x in rgb])
-        return Hsl(*[round(x * m) for x, m in zip((h, s, l), max_vals)])
+        return Hsl(*[round(x * m, prec) for x, m in zip((h, s, l), max_vals)])
 
     @classmethod
     def _hsv_to_rgb(cls, hsv):
-        max_vals = [x[1] for x in cls._RANGES['hsv']]
+        max_vals = [x[1] for x in cls.LIMITS['hsv']]
         hsv_float = [x / m for x, m in zip(hsv, max_vals)]
         return Rgb(*[round(x * 255) for x in colorsys.hsv_to_rgb(*hsv_float)])
 
     @classmethod
     def _rgb_to_hsv(cls, rgb):
-        max_vals = [x[1] for x in cls._RANGES['hsv']]
+        max_vals, prec = [x[1] for x in cls.LIMITS['hsv']], cls.PRECISION
         hsv = colorsys.rgb_to_hsv(*[x / 255 for x in rgb])
-        return Hsv(*[round(x * m) for x, m in zip(hsv, max_vals)])
+        return Hsv(*[round(x * m, prec) for x, m in zip(hsv, max_vals)])
 
     @classmethod
     def _hex_to_rgb(cls, hex_str):
@@ -209,50 +200,80 @@ class Color:
         '''
         common validation func for hsl, hsv, rgb, ryb
         '''
-
-        def check_value(x, a, b, p, msg):
+        def check(x, a, b, p, dt):
             '''
-            helper func to test values in multiple places
+            checks if value matches the correct datatype
+            and is within allowed limits
             '''
-            if not isinstance(x, int):
-                raise TypeError(f'{msg} not Int')
+            msg = f'value {x!r} given for {p!r} is'
+            if dt is int and not isinstance(x, int):
+                raise TypeError(f'{msg} not an int')
+            if dt is float and not (isinstance(x, int) or isinstance(x, dt)):
+                raise TypeError(f'{msg} not as int or a float')
             if x < a or x > b:
-                raise ValueError(f'{msg} not in range {a} <= {p} <= {b}')
+                raise ValueError(f'{msg} not in range {a} <= {p!r} <= {b}')
+            return x
+
+        inp_values = (-1, -1, -1) if inp_values == -1 else inp_values
+
+        #  validate input list
+        num = len(cls.LIMITS[color_spc])
+        is_iter = isinstance(inp_values, Iterable)
+        is_str = isinstance(inp_values, str)
+        is_valid_len = len(inp_values) == num
+        if not ((is_iter and not is_str) and is_valid_len):
+            raise TypeError(f'{inp_values!r} is not iterable with {num} items')
 
         values = list()
-
-        if not (isinstance(inp_values, Iterable) and len(inp_values) == 3):
-            raise TypeError(f'{color_spc} is not iterable with 3 items')
-
         for x, param in zip(inp_values, color_spc):
-            a, b = getattr(cls._RANGES[color_spc], param)
+            #  lower and upper limits for param
+            a, b = getattr(cls.LIMITS[color_spc], param)
+            #  datatype for this param
+            dt = type(b)
+            #  random number generator to use according to datatype
+            rng = {
+                int: lambda a, b: randint(a, b),
+                float: lambda a, b: round(uniform(a, b), cls.PRECISION)
+            }[dt]
 
+            #  value given for a param is -1 or RANDOM
             if x == -1:
-                values.append(randint(a, b))
+                values.append(rng(a, b))
                 continue
 
+            #  value given for a param is a range like [20, 40] or [-1, 60]
             if isinstance(x, Iterable) and not isinstance(x, str):
-                if len(x) < 2:
+                if len(x) != 2:
                     raise ValueError(
-                        f'setting "{param}" from a range needs 2 values'
+                        f'range {x!r} given for {param!r} needs 2 values'
                     )
-                err_msg = f'values given in range for "{param}" are'
-                [check_value(y, a, b, param, err_msg) for y in x]
-                values.append(randint(x[0], x[1]))
-            else:
-                check_value(x, a, b, param, f'"{param}" is')
-                values.append(x)
 
-        return globals()[cls._RANGES[color_spc].__class__.__name__](*values)
+                if tuple(x) == (-1, -1):
+                    values.append(rng(a, b))
+                    continue
+
+                x = [check(y, a, b, param, dt) if y != -1 else -1 for y in x]
+                x[0] = rng(a, x[1]) if x[0] == -1 else x[0]
+                x[1] = rng(x[0], b) if x[1] == -1 else x[1]
+                x = list(reversed(x)) if x[0] > x[1] else x
+
+                values.append(rng(x[0], x[1]))
+                continue
+
+            #  default case: single value given for a param
+            value = round(check(x, a, b, param, dt), cls.PRECISION)
+            values.append(value)
+
+        return type(cls.LIMITS[color_spc])(*values)
 
     @classmethod
     def _validate_hex(cls, value):
         if not isinstance(value, str):
-            raise TypeError('hex should be an string')
+            raise TypeError(f'{value!r} is not a string')
 
-        inp_hex = cls._RANGES['hex'].match(value)
+        inp_hex = cls.LIMITS['hex'].match(value)
         if inp_hex is None:
-            raise ValueError(f'{value} is not a valid hex color')
+            raise ValueError(f'{value!r} is not a valid hex color')
 
         return f'#{inp_hex.groups()[0].upper()}'
 

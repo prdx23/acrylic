@@ -1,59 +1,95 @@
 import unittest
 from random import randint
 
-from colorgen.colorgen import Color
+from colorgen.colorgen import Color, RANDOM
 
 
 class TestColor(unittest.TestCase):
 
     def test_basic(self):
-        new_color = Color()
-        self.assertEqual(new_color.hsl, (0, 0, 0))
-        new_color.hsl = (180, 90, 60)
-        self.assertEqual(new_color.hsl.h, 180)
-        self.assertEqual(new_color.hsl.s, 90)
-        self.assertEqual(new_color.hsl.l, 60)
+        color = Color()
+        self.assertEqual(color.rgb, (0, 0, 0))
 
-        values = new_color.update(hsl=(270, 20, 80)).hsl
-        self.assertEqual(values, (270, 20, 80))
+        color = Color(rgb=(83, 237, 229))
+        self.assertEqual(color.rgb, (83, 237, 229))
 
     def test_dunder(self):
-        new_color = Color(hsl=(180, 90, 60))
-        self.assertEqual(repr(new_color), 'Color(hsl=(180, 90, 60))')
-        self.assertEqual(str(new_color), 'h=180, s=90, l=60')
+        self.assertEqual(str(Color(rgb=(61, 245, 245))), 'r=61, g=245, b=245')
+        self.assertEqual(str(Color(hex='#3DF5F5')), "hex='#3DF5F5'")
 
         new_color = Color(rgb=(61, 245, 245))
-        self.assertEqual(repr(new_color), 'Color(rgb=(61, 245, 245))')
-        self.assertEqual(str(new_color), 'r=61, g=245, b=245')
-
+        self.assertEqual(eval(repr(new_color)), new_color)
+        new_color = Color(hsl=(180, 90, 60))
+        self.assertEqual(eval(repr(new_color)), new_color)
         new_color = Color(hex='#3DF5F5')
-        self.assertEqual(repr(new_color), "Color(hex='#3DF5F5')")
-        self.assertEqual(str(new_color), "hex=#3DF5F5")
+        self.assertEqual(eval(repr(new_color)), new_color)
 
-        self.assertEqual(new_color, Color(hsl=(180, 90, 60)))
-        self.assertEqual(new_color, Color(rgb=(61, 245, 245)))
-        self.assertEqual(new_color, Color(hex='#3DF5F5'))
-        self.assertNotEqual(new_color, Color(rgb=(62, 245, 245)))
+        #  self.assertEqual(new_color, Color(hsl=(180, 90, 60)))
+        #  self.assertEqual(new_color, Color(rgb=(61, 245, 245)))
+        #  self.assertEqual(new_color, Color(hex='#3DF5F5'))
+        #  self.assertNotEqual(new_color, Color(rgb=(62, 245, 245)))
 
-    def test_validation(self):
+    def test_validation_inplist(self):
         with self.assertRaises(TypeError):
-            _ = Color(hsl=(5, 0.5, 1))
-            _ = Color(hsl='test')
-            _ = Color(hsl=1)
-            _ = Color(hsl=('test', 1, 0.5))
-            _ = Color(hsl=(1, 'test', 0.5))
-            _ = Color(hsl=(1, 0.5, 'test'))
-            _ = Color(hsl=(0, 0.5))
+            _ = Color(rgb=1)
+            _ = Color(rgb='123')
+            _ = Color(rgb='test!')
+            _ = Color(rgb=(0, 0.5))
+            _ = Color(rgb=(1, 2, 3, 4))
 
+    def test_validation_type(self):
+        with self.assertRaises(TypeError):
+            _ = Color(rgb=(25.123, 50, 200))
+            _ = Color(rgb=('test!', 50, 200))
+            _ = Color(rgb=((25.123, 24), 50, 200))
+            _ = Color(rgb=((24, 25.123), 50, 200))
+            _ = Color(rgb=(('test!', 24), 50, 200))
+            _ = Color(rgb=((24, 'test!'), 50, 200))
+
+    def test_validation_value(self):
+        lower, upper = Color.LIMITS['rgb'].r
         with self.assertRaises(ValueError):
-            _ = Color(hsl=(0, 1, 101))
-            _ = Color(hsl=(1, 101, 0))
-            _ = Color(hsl=(361, 0, 1))
-            _ = Color(hsl=(0, (1, 101), 5))
-            _ = Color(hsl=(0, (101, 1), 5))
-            _ = Color(hsl=((1, 361), 1, 5))
-            _ = Color(hsl=((361, 1), 1, 5))
+            _ = Color(rgb=(lower - 10, 50, 200))
+            _ = Color(rgb=(upper + 10, 50, 200))
+            _ = Color(rgb=((lower - 10, 24), 50, 200))
+            _ = Color(rgb=((24, lower - 10), 50, 200))
+            _ = Color(rgb=((upper + 10, 24), 50, 200))
+            _ = Color(rgb=((23, upper + 10), 50, 200))
+            _ = Color(rgb=((24, 42, 64), 50, 200))
+            _ = Color(rgb=((24,), 50, 200))
 
+    def test_single_values(self):
+        limits = Color.LIMITS['rgb']
+        for _ in range(50):
+            values = [randint(limits[i][0], limits[i][1]) for i in range(3)]
+            color = Color(rgb=values)
+            self.assertEqual(color.rgb, tuple(values))
+            [self.assertIsInstance(x, int) for x in color.rgb]
+
+    def test_random(self):
+        limits = Color.LIMITS['rgb']
+        for _ in range(50):
+            color = Color(rgb=RANDOM)
+            check = lambda i, x: limits[i][0] <= x <= limits[i][1]
+            self.assertTrue(all(check(i, x) for i, x in enumerate(color.rgb)))
+            [self.assertIsInstance(x, int) for x in color.rgb]
+
+    def test_range_values(self):
+        for _ in range(50):
+            lower, upper = Color.LIMITS['rgb'].r
+            a, b = randint(lower, upper // 2), randint(upper // 2, upper)
+            color = Color(rgb=([a, b], 42, 64))
+            self.assertTrue(a <= color.rgb.r <= b)
+            color = Color(rgb=([b, a], 42, 64))
+            self.assertTrue(a <= color.rgb.r <= b)
+            color = Color(rgb=([RANDOM, a], 42, 64))
+            self.assertTrue(color.rgb.r <= a)
+            color = Color(rgb=([b, RANDOM], 42, 64))
+            self.assertTrue(b <= color.rgb.r)
+            color = Color(rgb=([RANDOM, RANDOM], 42, 64))
+            self.assertTrue(lower <= color.rgb.r <= upper)
+
+    def test_validation_hex(self):
         with self.assertRaises(TypeError):
             _ = Color(hex=1)
             _ = Color(hex=(5, 0.5, 1))
@@ -63,67 +99,33 @@ class TestColor(unittest.TestCase):
             _ = Color(hex='#0000')
             _ = Color(hex='#0000xx')
 
-    def test_hsl(self):
-        new_color = Color(hsl=(180, 40, 60))
-        self.assertEqual(new_color.hsl, (180, 40, 60))
-        self.assertEqual(new_color.hsl.h, 180)
-        self.assertEqual(new_color.hsl.s, 40)
-        self.assertEqual(new_color.hsl.l, 60)
-
-        for _ in range(20):
-            new_color = Color(hsl=(-1, -1, 60))
-            values = new_color.hsl
-            self.assertEqual(values.l, 60)
-            self.assertTrue(0 <= values.h <= 360)
-            self.assertTrue(0 <= values.s <= 100)
-
-        for _ in range(20):
-            a, b = randint(0, 180), randint(180, 360)
-            c, d = randint(0, 40), randint(60, 100)
-            new_color = Color(hsl=((a, b), (c, d), 60))
-            values = new_color.hsl
-            self.assertEqual(values.l, 60)
-            self.assertTrue(a <= values.h <= b)
-            self.assertTrue(c <= values.s <= d)
-
-    def test_rgb(self):
-        new_color = Color(rgb=(24, 0, 255))
-        self.assertEqual(new_color.rgb, (24, 0, 255))
-
-        for _ in range(20):
-            new_color = Color(rgb=(-1, 42, 62))
-            values = new_color.rgb
-            self.assertEqual(values[1], 42)
-            self.assertEqual(values[2], 62)
-            self.assertTrue(0 <= values[0] <= 255)
-
-        for _ in range(20):
-            a, b = randint(0, 42), randint(42, 255)
-            new_color = Color(rgb=((a, b), 42, 62))
-            values = new_color.rgb
-            self.assertEqual(values[1], 42)
-            self.assertEqual(values[2], 62)
-            self.assertTrue(a <= values[0] <= b)
-
     def test_hex(self):
         tests = [
             '#3DF5F5', '3DF5F5', '#3df5f5', '3df5f5', '#3DF5F5FF',
             '3DF5F5FF', '#3df5f5ff', '3df5f5ff'
         ]
         for test in tests:
-            new_color = Color(hex=test)
-            self.assertEqual(new_color.hex, '#3DF5F5')
+            self.assertEqual(Color(hex=test).hex, '#3DF5F5')
 
     def test_conversion(self):
         def test_all(color):
-            self.assertEqual(color.hsl, (180, 90, 60))
-            self.assertEqual(color.rgb, (61, 245, 245))
-            self.assertEqual(color.hsv, (180, 75, 96))
-            self.assertEqual(color.hex, '#3DF5F5')
-            self.assertEqual(color.ryb, (10, 102, 194))
+            self.assertEqual(color.hsl, (176.88, 81.05, 62.75))
+            self.assertEqual(color.rgb, (83, 237, 229))
+            self.assertEqual(color.hsv, (176.88, 64.98, 92.94))
+            self.assertEqual(color.hex, '#53EDE5')
+            self.assertEqual(color.ryb, (18, 97, 172))
 
-        test_all(Color(hsl=(180, 90, 60)))
-        test_all(Color(rgb=(61, 245, 245)))
-        test_all(Color(hsv=(180, 75, 96)))
-        test_all(Color(hex='#3DF5F5'))
-        test_all(Color(ryb=(10, 102, 194)))
+        test_all(Color(hsl=(176.88, 81.05, 62.75)))
+        test_all(Color(rgb=(83, 237, 229)))
+        test_all(Color(hsv=(176.88, 64.98, 92.94)))
+        test_all(Color(hex='#53EDE5'))
+        test_all(Color(ryb=(18, 97, 172)))
+
+    def test_immutability(self):
+        with self.assertRaises(AttributeError):
+            color = Color(rgb=(83, 237, 229))
+            color.hsl = (176.88, 81.05, 62.75)
+            color.rgb = (83, 237, 229)
+            color.hsv = (176.88, 64.98, 92.94)
+            color.hex = '#53EDE5'
+            color.ryb = (18, 97, 172)
