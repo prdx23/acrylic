@@ -13,7 +13,7 @@ class TestColor(unittest.TestCase):
         color = Color(rgb=(83, 237, 229))
         self.assertEqual(color.rgb, (83, 237, 229))
 
-    def test_dunder(self):
+    def test_str_repr(self):
         self.assertEqual(str(Color(rgb=(61, 245, 245))), 'r=61, g=245, b=245')
         self.assertEqual(str(Color(hex='#3DF5F5')), "hex='#3DF5F5'")
 
@@ -24,10 +24,30 @@ class TestColor(unittest.TestCase):
         new_color = Color(hex='#3DF5F5')
         self.assertEqual(eval(repr(new_color)), new_color)
 
-        #  self.assertEqual(new_color, Color(hsl=(180, 90, 60)))
-        #  self.assertEqual(new_color, Color(rgb=(61, 245, 245)))
-        #  self.assertEqual(new_color, Color(hex='#3DF5F5'))
-        #  self.assertNotEqual(new_color, Color(rgb=(62, 245, 245)))
+    def test_eq(self):
+        new_color = Color(rgb=(61, 245, 245))
+        self.assertEqual(new_color, Color(hsl=(180, 90, 60)))
+        self.assertEqual(new_color, Color(rgb=(61, 245, 245)))
+        self.assertEqual(new_color, Color(hex='#3DF5F5'))
+        self.assertNotEqual(new_color, Color(rgb=(62, 245, 245)))
+
+    def test_hash(self):
+        new_color = Color(rgb=(61, 245, 245))
+        self.assertEqual(hash(new_color), hash(Color(hsl=(180, 90, 60))))
+        self.assertEqual(hash(new_color), hash(Color(rgb=(61, 245, 245))))
+        self.assertEqual(hash(new_color), hash(Color(hex='#3DF5F5')))
+        self.assertNotEqual(hash(new_color), hash(Color(rgb=(62, 245, 245))))
+
+        test_dict = {new_color: 'test!'}
+        self.assertEqual(test_dict[Color(hsl=(180, 90, 60))], 'test!')
+        self.assertEqual(test_dict[Color(hsl=(180, 90.1, 60))], 'test!')
+        self.assertEqual(test_dict[Color(hsl=(180, 89.8, 60))], 'test!')
+
+        test_set = set([
+            Color(rgb=(61, 245, 245)), Color(hsl=(180, 90, 60)),
+            Color(hsl=(180, 89.8, 60)), Color(hex='#3DF5F5')
+        ])
+        self.assertEqual(len(test_set), 1)
 
     def test_validation_inplist(self):
         with self.assertRaises(TypeError):

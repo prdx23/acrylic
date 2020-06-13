@@ -1,5 +1,6 @@
 import re
 import colorsys
+from functools import reduce
 from random import randint, uniform
 from collections import namedtuple
 from collections.abc import Iterable
@@ -19,7 +20,7 @@ def property_factory(attr):
         return getattr(instance, f'_{attr}')
 
     def setter(instance, *args, **kwargs):
-        raise AttributeError(f'{type(instance).__name__}.{attr} is ReadOnly')
+        raise AttributeError(f'{attr!r} is a readonly attribute')
 
     return property(getter, setter)
 
@@ -102,6 +103,10 @@ class Color:
                 self.ryb == other.ryb
             ])
         return NotImplemented
+
+    def __hash__(self):
+        hashes = (hash(getattr(self, x)) for x in self.LIMITS.keys())
+        return reduce(lambda a, b: a ^ b, hashes)
 
     @property
     def default_colorspace(self):
