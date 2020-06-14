@@ -1,9 +1,11 @@
 import re
 import colorsys
 from functools import reduce
-from random import randint, uniform
 from collections import namedtuple
+from random import randint, uniform
 from collections.abc import Iterable
+
+import colorgen.schemes as schemes
 
 
 Hsl = namedtuple('Hsl', 'h s l')
@@ -200,26 +202,27 @@ class Color:
 
     #  - - - - - - - -
 
+    @staticmethod
+    def _check(x, a, b, p, dt):
+        '''
+        checks if value matches the correct datatype
+        and is within allowed limits
+        '''
+        msg = f'value {x!r} given for {p!r} is'
+        if dt is int and not isinstance(x, int):
+            raise TypeError(f'{msg} not an int')
+        if dt is float and not (isinstance(x, int) or isinstance(x, dt)):
+            raise TypeError(f'{msg} not as int or a float')
+        if x < a or x > b:
+            raise ValueError(f'{msg} not in range {a} <= {p!r} <= {b}')
+        return x
+
     @classmethod
     def _validate(cls, inp_values, color_spc):
         '''
         common validation func for hsl, hsv, rgb, ryb
         '''
-        def check(x, a, b, p, dt):
-            '''
-            checks if value matches the correct datatype
-            and is within allowed limits
-            '''
-            msg = f'value {x!r} given for {p!r} is'
-            if dt is int and not isinstance(x, int):
-                raise TypeError(f'{msg} not an int')
-            if dt is float and not (isinstance(x, int) or isinstance(x, dt)):
-                raise TypeError(f'{msg} not as int or a float')
-            if x < a or x > b:
-                raise ValueError(f'{msg} not in range {a} <= {p!r} <= {b}')
-            return x
-
-        inp_values = (-1, -1, -1) if inp_values == -1 else inp_values
+        inp_values = [RANDOM] * 3 if inp_values == RANDOM else inp_values
 
         #  validate input list
         num = len(cls.LIMITS[color_spc])
@@ -242,7 +245,7 @@ class Color:
             }[dt]
 
             #  value given for a param is -1 or RANDOM
-            if x == -1:
+            if x == RANDOM:
                 values.append(rng(a, b))
                 continue
 
@@ -253,20 +256,21 @@ class Color:
                         f'range {x!r} given for {param!r} needs 2 values'
                     )
 
-                if tuple(x) == (-1, -1):
+                if tuple(x) == (RANDOM, RANDOM):
                     values.append(rng(a, b))
                     continue
 
-                x = [check(y, a, b, param, dt) if y != -1 else -1 for y in x]
-                x[0] = rng(a, x[1]) if x[0] == -1 else x[0]
-                x[1] = rng(x[0], b) if x[1] == -1 else x[1]
+                x = [cls._check(y, a, b, param, dt)
+                     if y != RANDOM else RANDOM for y in x]
+                x[0] = rng(a, x[1]) if x[0] == RANDOM else x[0]
+                x[1] = rng(x[0], b) if x[1] == RANDOM else x[1]
                 x = list(reversed(x)) if x[0] > x[1] else x
 
                 values.append(rng(x[0], x[1]))
                 continue
 
             #  default case: single value given for a param
-            value = round(check(x, a, b, param, dt), cls.PRECISION)
+            value = round(cls._check(x, a, b, param, dt), cls.PRECISION)
             values.append(value)
 
         return type(cls.LIMITS[color_spc])(*values)
@@ -282,7 +286,58 @@ class Color:
 
         return f'#{inp_hex.groups()[0].upper()}'
 
-    def _ryb_mode(self):
-        new_color = Color(ryb=self.rgb)
-        new_color.hsv = (new_color.hsv.h, self.hsv.s, self.hsv.v)
-        return new_color
+    #  - - - - - - - -
+
+    def _in_ryb(self):
+        new_hue = Color(ryb=self.rgb).hsl.h
+        return Color(hsl=(new_hue, self.hsl.s, self.hsl.l))
+
+    def scheme(self, name, in_rgb=False, fuzzy=0):
+        colors, (a, b) = list(), self.LIMITS['hsl'].h
+        if fuzzy == RANDOM:
+            fuzzy = uniform(b / 20, b / 5) if randint(0, 5) else 0
+        else:
+            fuzzy = self._check(fuzzy, a, b, 'fuzzy', float)
+
+        deltas = {
+            schemes.ANALOGOUS: [b / 24, -(b / 24), b / 12, -(b / 12)],
+            schemes.COMPLEMENTARY: [b / 2],
+            schemes.TRIADIC: [b / 3, -(b / 3)],
+            schemes.SQUARE: [b / 4, -(b / 4), b / 2],
+            schemes.SPLIT_COMPLEMENTARY: [
+                (b / 2) - (b / 12), (b / 2) + (b / 12)
+            ],
+            schemes.ACCENTED_ANALOGOUS: [b / 12, -(b / 12), b / 2],
+            schemes.RECTANGLE: [b / 2, (b / 2) - (b / 8), b / 8],
+            schemes.NEAR_COMPLEMENTARY: [(b / 2) - (b / 12)],
+            schemes.COMPLEMENTARY_TRIADIC: [b / 2, b / 4],
+            schemes.MODIFIED_TRIADIC: [b / 12, b / 6],
+        }
+
+        if name == schemes.MONOCHROMATIC:
+            m = (self.LIMITS['hsv'].s[1] / (self.LIMITS['hsv'].s[1] / 30))
+            if self.hsv.s > m:
+                s = [self.hsv.s, self.hsv.s - m, self.hsv.s, self.hsv.s - m]
+            else:
+                s = [self.hsv.s, self.hsv.s + m, self.hsv.s, self.hsv.s + m]
+            v = [self.LIMITS['hsv'].v[1] / 5, self.LIMITS['hsv'].v[1]]
+            for i in range(4):
+                colors.append(Color(hsv=(self.hsl.h, s[i], v)))
+            return colors
+
+        elif name == schemes.SHADES:
+            v = [self.LIMITS['hsv'].v[1] / 5, self.LIMITS['hsv'].v[1]]
+            for i in range(4):
+                colors.append(Color(hsv=(self.hsl.h, self.hsv.s, v)))
+            return colors
+
+        elif name not in deltas:
+            raise ValueError(f'{name!r} is not a valid color scheme')
+
+        for angle in deltas[name]:
+            h = (self.hsl.h + angle + uniform(-fuzzy, +fuzzy)) % b
+            if not in_rgb:
+                colors.append(Color(hsv=(h, self.hsv.s, self.hsv.v))._in_ryb())
+            else:
+                colors.append(Color(hsv=(h, self.hsv.s, self.hsv.v)))
+        return colors
