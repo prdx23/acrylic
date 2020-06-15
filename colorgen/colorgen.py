@@ -53,31 +53,31 @@ class Color:
             values = locals()[color_spc]
             if values is not None:
                 if color_spc == 'hex':
-                    validated_values = Color._validate_hex(values)
+                    validated_values = self._validate_hex(values)
                 else:
-                    validated_values = Color._validate(values, color_spc)
+                    validated_values = self._validate(values, color_spc)
 
                 self.default_colorspace = color_spc
                 break
 
         #  if no params given, assume rgb(0, 0, 0)
         if validated_values is None:
-            validated_values = Color._validate((0, 0, 0), 'rgb')
+            validated_values = self._validate((0, 0, 0), 'rgb')
             self.default_colorspace = 'rgb'
 
         #  if a color space other than rgb was given, convert to rgb
         if self.default_colorspace != 'rgb':
-            to_rgb = getattr(Color, f'_{self.default_colorspace}_to_rgb')
+            to_rgb = getattr(self, f'_{self.default_colorspace}_to_rgb')
             self._rgb = to_rgb(validated_values)
         else:
             self._rgb = validated_values
 
         #  convert from rgb to all others, including circling back rgb
-        self._hsl = Color._rgb_to_hsl(self.rgb)
-        self._rgb = Color._hsl_to_rgb(self.hsl)
-        self._hsv = Color._rgb_to_hsv(self.rgb)
-        self._hex = Color._rgb_to_hex(self.rgb)
-        self._ryb = Color._rgb_to_ryb(self.rgb)
+        self._hsl = self._rgb_to_hsl(self.rgb)
+        self._rgb = self._hsl_to_rgb(self.hsl)
+        self._hsv = self._rgb_to_hsv(self.rgb)
+        self._hex = self._rgb_to_hex(self.rgb)
+        self._ryb = self._rgb_to_ryb(self.rgb)
 
     def __repr__(self):
         cls_name = type(self).__name__
@@ -96,7 +96,7 @@ class Color:
             return ', '.join(f'{x}={y!r}' for x, y in zip(color_space, values))
 
     def __eq__(self, other):
-        if isinstance(other, Color):
+        if isinstance(other, type(self)):
             return all([
                 self.hsl == other.hsl,
                 self.rgb == other.rgb,
