@@ -180,7 +180,7 @@ All contributions to `acrylic` are welcome and appreciated! Ways in which you ca
 - Spread the word about `acrylic`!
 
 ## Credit
-`acrylic` was developed by [Arsh](prdx.me)
+`acrylic` was developed by [Arsh](https://prdx.me)
 
 ## License
 **MIT License**: Copyright (c) 2020 Arsh  
