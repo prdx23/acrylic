@@ -1,7 +1,7 @@
 import unittest
 from random import randint
 
-from colorgen.colorgen import Color, RANDOM
+from acrylic import Color, RANDOM
 
 
 class TestColor(unittest.TestCase):
@@ -67,7 +67,7 @@ class TestColor(unittest.TestCase):
             _ = Color(rgb=((24, 'test!'), 50, 200))
 
     def test_validation_value(self):
-        lower, upper = Color.LIMITS['rgb'].r
+        lower, upper = Color._LIMITS['rgb'].r
         with self.assertRaises(ValueError):
             _ = Color(rgb=(lower - 10, 50, 200))
             _ = Color(rgb=(upper + 10, 50, 200))
@@ -79,7 +79,7 @@ class TestColor(unittest.TestCase):
             _ = Color(rgb=((24,), 50, 200))
 
     def test_single_values(self):
-        limits = Color.LIMITS['rgb']
+        limits = Color._LIMITS['rgb']
         for _ in range(50):
             values = [randint(limits[i][0], limits[i][1]) for i in range(3)]
             color = Color(rgb=values)
@@ -87,7 +87,7 @@ class TestColor(unittest.TestCase):
             [self.assertIsInstance(x, int) for x in color.rgb]
 
     def test_random(self):
-        limits = Color.LIMITS['rgb']
+        limits = Color._LIMITS['rgb']
         for _ in range(50):
             color = Color(rgb=RANDOM)
             check = lambda i, x: limits[i][0] <= x <= limits[i][1]
@@ -96,7 +96,7 @@ class TestColor(unittest.TestCase):
 
     def test_range_values(self):
         for _ in range(50):
-            lower, upper = Color.LIMITS['rgb'].r
+            lower, upper = Color._LIMITS['rgb'].r
             a, b = randint(lower, upper // 2), randint(upper // 2, upper)
             color = Color(rgb=([a, b], 42, 64))
             self.assertTrue(a <= color.rgb.r <= b)

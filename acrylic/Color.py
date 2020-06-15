@@ -5,7 +5,7 @@ from collections import namedtuple
 from random import randint, uniform
 from collections.abc import Iterable
 
-import colorgen.schemes as schemes
+import acrylic.Schemes as Schemes
 
 
 Hsl = namedtuple('Hsl', 'h s l')
@@ -24,11 +24,18 @@ def property_factory(attr):
     def setter(instance, *args, **kwargs):
         raise AttributeError(f'{attr!r} is a readonly attribute')
 
-    return property(getter, setter)
+    doc = f'(readonly) return {attr} component of the color'
+    return property(getter, setter, doc=doc)
 
 
 class Color:
-    __slots__ = ('_hsl', '_hsv', '_rgb', '_hex', '_ryb', '_default_colorspace')
+    '''
+    class to represent colors
+
+    Supported color formats: RGB, HSL, HSV, HEX, RYB
+    '''
+
+    __slots__ = ('_hsl', '_hsv', '_rgb', '_hex', '_ryb', '_default_format')
 
     hsl = property_factory('hsl')
     hsv = property_factory('hsv')
@@ -36,20 +43,20 @@ class Color:
     ryb = property_factory('ryb')
     hex = property_factory('hex')
 
-    LIMITS = {
+    _LIMITS = {
         'hsl': Hsl((0, 360.0), (0, 100.0), (0, 100.0)),
         'hsv': Hsv((0, 360.0), (0, 100.0), (0, 100.0)),
         'rgb': Rgb((0, 255), (0, 255), (0, 255)),
         'ryb': Ryb((0, 255), (0, 255), (0, 255)),
         'hex': re.compile(r'^[#]?([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$'),
     }
-    PRECISION = 2
+    _PRECISION = 2
 
     def __init__(self, hsl=None, rgb=None, hsv=None, hex=None, ryb=None):
         validated_values = None
 
         #  find which color space was given and validate its input
-        for color_spc in list(self.LIMITS.keys()):
+        for color_spc in list(self._LIMITS.keys()):
             values = locals()[color_spc]
             if values is not None:
                 if color_spc == 'hex':
@@ -57,17 +64,17 @@ class Color:
                 else:
                     validated_values = self._validate(values, color_spc)
 
-                self.default_colorspace = color_spc
+                self.default_format = color_spc
                 break
 
         #  if no params given, assume rgb(0, 0, 0)
         if validated_values is None:
             validated_values = self._validate((0, 0, 0), 'rgb')
-            self.default_colorspace = 'rgb'
+            self.default_format = 'rgb'
 
         #  if a color space other than rgb was given, convert to rgb
-        if self.default_colorspace != 'rgb':
-            to_rgb = getattr(self, f'_{self.default_colorspace}_to_rgb')
+        if self.default_format != 'rgb':
+            to_rgb = getattr(self, f'_{self.default_format}_to_rgb')
             self._rgb = to_rgb(validated_values)
         else:
             self._rgb = validated_values
@@ -81,18 +88,18 @@ class Color:
 
     def __repr__(self):
         cls_name = type(self).__name__
-        if self.default_colorspace == 'hex':
+        if self.default_format == 'hex':
             return f'{cls_name}(hex={repr(self.hex)})'
         else:
-            values = tuple(getattr(self, self.default_colorspace))
-            return f'{cls_name}({self.default_colorspace}={repr(values)})'
+            values = tuple(getattr(self, self.default_format))
+            return f'{cls_name}({self.default_format}={repr(values)})'
 
     def __str__(self):
-        if self.default_colorspace == 'hex':
+        if self.default_format == 'hex':
             return f'hex={self.hex!r}'
         else:
-            values = getattr(self, self.default_colorspace)
-            color_space = self.default_colorspace
+            values = getattr(self, self.default_format)
+            color_space = self.default_format
             return ', '.join(f'{x}={y!r}' for x, y in zip(color_space, values))
 
     def __eq__(self, other):
@@ -107,42 +114,47 @@ class Color:
         return NotImplemented
 
     def __hash__(self):
-        hashes = (hash(getattr(self, x)) for x in self.LIMITS.keys())
+        hashes = (hash(getattr(self, x)) for x in self._LIMITS.keys())
         return reduce(lambda a, b: a ^ b, hashes)
 
     @property
-    def default_colorspace(self):
-        return self._default_colorspace
+    def default_format(self):
+        '''
+        Determines which color format to use for `str()` and `repr()`
 
-    @default_colorspace.setter
-    def default_colorspace(self, value):
-        if value.lower() not in self.LIMITS.keys():
+        This has no impact on the actual color
+        '''
+        return self._default_format
+
+    @default_format.setter
+    def default_format(self, value):
+        if value.lower() not in self._LIMITS.keys():
             raise ValueError('Not a valid Color Space')
-        self._default_colorspace = value.lower()
+        self._default_format = value.lower()
 
     #  - - - - - - - -
 
     @classmethod
     def _hsl_to_rgb(cls, hsl):
-        max_vals = [x[1] for x in cls.LIMITS['hsl']]
+        max_vals = [x[1] for x in cls._LIMITS['hsl']]
         (h, s, l) = [x / m for x, m in zip(hsl, max_vals)]
         return Rgb(*[round(x * 255) for x in colorsys.hls_to_rgb(h, l, s)])
 
     @classmethod
     def _rgb_to_hsl(cls, rgb):
-        max_vals, prec = [x[1] for x in cls.LIMITS['hsl']], cls.PRECISION
+        max_vals, prec = [x[1] for x in cls._LIMITS['hsl']], cls._PRECISION
         (h, l, s) = colorsys.rgb_to_hls(*[x / 255 for x in rgb])
         return Hsl(*[round(x * m, prec) for x, m in zip((h, s, l), max_vals)])
 
     @classmethod
     def _hsv_to_rgb(cls, hsv):
-        max_vals = [x[1] for x in cls.LIMITS['hsv']]
+        max_vals = [x[1] for x in cls._LIMITS['hsv']]
         hsv_float = [x / m for x, m in zip(hsv, max_vals)]
         return Rgb(*[round(x * 255) for x in colorsys.hsv_to_rgb(*hsv_float)])
 
     @classmethod
     def _rgb_to_hsv(cls, rgb):
-        max_vals, prec = [x[1] for x in cls.LIMITS['hsv']], cls.PRECISION
+        max_vals, prec = [x[1] for x in cls._LIMITS['hsv']], cls._PRECISION
         hsv = colorsys.rgb_to_hsv(*[x / 255 for x in rgb])
         return Hsv(*[round(x * m, prec) for x, m in zip(hsv, max_vals)])
 
@@ -205,7 +217,7 @@ class Color:
     @staticmethod
     def _check(x, a, b, p, dt):
         '''
-        checks if value matches the correct datatype
+        check if value matches the correct datatype
         and is within allowed limits
         '''
         msg = f'value {x!r} given for {p!r} is'
@@ -225,7 +237,7 @@ class Color:
         inp_values = [RANDOM] * 3 if inp_values == RANDOM else inp_values
 
         #  validate input list
-        num = len(cls.LIMITS[color_spc])
+        num = len(cls._LIMITS[color_spc])
         is_iter = isinstance(inp_values, Iterable)
         is_str = isinstance(inp_values, str)
         is_valid_len = len(inp_values) == num
@@ -235,13 +247,13 @@ class Color:
         values = list()
         for x, param in zip(inp_values, color_spc):
             #  lower and upper limits for param
-            a, b = getattr(cls.LIMITS[color_spc], param)
+            a, b = getattr(cls._LIMITS[color_spc], param)
             #  datatype for this param
             dt = type(b)
             #  random number generator to use according to datatype
             rng = {
                 int: lambda a, b: randint(a, b),
-                float: lambda a, b: round(uniform(a, b), cls.PRECISION)
+                float: lambda a, b: round(uniform(a, b), cls._PRECISION)
             }[dt]
 
             #  value given for a param is -1 or RANDOM
@@ -270,17 +282,17 @@ class Color:
                 continue
 
             #  default case: single value given for a param
-            value = round(cls._check(x, a, b, param, dt), cls.PRECISION)
+            value = round(cls._check(x, a, b, param, dt), cls._PRECISION)
             values.append(value)
 
-        return type(cls.LIMITS[color_spc])(*values)
+        return type(cls._LIMITS[color_spc])(*values)
 
     @classmethod
     def _validate_hex(cls, value):
         if not isinstance(value, str):
             raise TypeError(f'{value!r} is not a string')
 
-        inp_hex = cls.LIMITS['hex'].match(value)
+        inp_hex = cls._LIMITS['hex'].match(value)
         if inp_hex is None:
             raise ValueError(f'{value!r} is not a valid hex color')
 
@@ -293,40 +305,43 @@ class Color:
         return Color(hsl=(new_hue, self.hsl.s, self.hsl.l))
 
     def scheme(self, name, in_rgb=False, fuzzy=0):
-        colors, (a, b) = list(), self.LIMITS['hsl'].h
+        '''
+        Returns a list of `Color` according to the given color scheme
+        '''
+        colors, (a, b) = list(), self._LIMITS['hsl'].h
         if fuzzy == RANDOM:
             fuzzy = uniform(b / 20, b / 5) if randint(0, 5) else 0
         else:
             fuzzy = self._check(fuzzy, a, b, 'fuzzy', float)
 
         deltas = {
-            schemes.ANALOGOUS: [b / 24, -(b / 24), b / 12, -(b / 12)],
-            schemes.COMPLEMENTARY: [b / 2],
-            schemes.TRIADIC: [b / 3, -(b / 3)],
-            schemes.SQUARE: [b / 4, -(b / 4), b / 2],
-            schemes.SPLIT_COMPLEMENTARY: [
+            Schemes.ANALOGOUS: [b / 24, -(b / 24), b / 12, -(b / 12)],
+            Schemes.COMPLEMENTARY: [b / 2],
+            Schemes.TRIADIC: [b / 3, -(b / 3)],
+            Schemes.SQUARE: [b / 4, -(b / 4), b / 2],
+            Schemes.SPLIT_COMPLEMENTARY: [
                 (b / 2) - (b / 12), (b / 2) + (b / 12)
             ],
-            schemes.ACCENTED_ANALOGOUS: [b / 12, -(b / 12), b / 2],
-            schemes.RECTANGLE: [b / 2, (b / 2) - (b / 8), b / 8],
-            schemes.NEAR_COMPLEMENTARY: [(b / 2) - (b / 12)],
-            schemes.COMPLEMENTARY_TRIADIC: [b / 2, b / 4],
-            schemes.MODIFIED_TRIADIC: [b / 12, b / 6],
+            Schemes.ACCENTED_ANALOGOUS: [b / 12, -(b / 12), b / 2],
+            Schemes.RECTANGLE: [b / 2, (b / 2) - (b / 8), b / 8],
+            Schemes.NEAR_COMPLEMENTARY: [(b / 2) - (b / 12)],
+            Schemes.COMPLEMENTARY_TRIADIC: [b / 2, b / 4],
+            Schemes.MODIFIED_TRIADIC: [b / 12, b / 6],
         }
 
-        if name == schemes.MONOCHROMATIC:
-            m = (self.LIMITS['hsv'].s[1] / (self.LIMITS['hsv'].s[1] / 30))
+        if name == Schemes.MONOCHROMATIC:
+            m = (self._LIMITS['hsv'].s[1] / (self._LIMITS['hsv'].s[1] / 30))
             if self.hsv.s > m:
                 s = [self.hsv.s, self.hsv.s - m, self.hsv.s, self.hsv.s - m]
             else:
                 s = [self.hsv.s, self.hsv.s + m, self.hsv.s, self.hsv.s + m]
-            v = [self.LIMITS['hsv'].v[1] / 5, self.LIMITS['hsv'].v[1]]
+            v = [self._LIMITS['hsv'].v[1] / 5, self._LIMITS['hsv'].v[1]]
             for i in range(4):
                 colors.append(Color(hsv=(self.hsl.h, s[i], v)))
             return colors
 
-        elif name == schemes.SHADES:
-            v = [self.LIMITS['hsv'].v[1] / 5, self.LIMITS['hsv'].v[1]]
+        elif name == Schemes.SHADES:
+            v = [self._LIMITS['hsv'].v[1] / 5, self._LIMITS['hsv'].v[1]]
             for i in range(4):
                 colors.append(Color(hsv=(self.hsl.h, self.hsv.s, v)))
             return colors
