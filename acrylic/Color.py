@@ -5,7 +5,7 @@ from collections import namedtuple
 from random import randint, uniform
 from collections.abc import Iterable
 
-import acrylic.Schemes as Schemes
+from . import Schemes
 
 
 Hsl = namedtuple('Hsl', 'h s l')

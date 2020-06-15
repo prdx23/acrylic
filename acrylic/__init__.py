@@ -1,2 +1,2 @@
-from acrylic.Color import Color, RANDOM
-import acrylic.Schemes as Schemes
+from .Color import Color, RANDOM
+from . import Schemes

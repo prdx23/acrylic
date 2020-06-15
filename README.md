@@ -1,17 +1,17 @@
 # Acrylic
 
-Have you ever wanted a simple and intuitive way to work with colors in python? then this library is for you! `acrylic` is a python package that you can use to manage colors, convert between different color formats, and work with color schemes and palettes.
+Have you ever wanted a simple and intuitive way to work with colors in python? Then this library is for you! `acrylic` is a python package that you can use to manage colors, convert between different color formats, and work with color schemes and palettes.
 
 ## How to Install
 `acrylic` can be installed using pip:
 ```shell
 pip install acrylic
 ```
-It works with Python 3.6 and above and has no dependencies.
+It has no dependencies and works with Python >=3.6
 
 ## Documentation
 
-#### Defining Colors
+### Defining Colors
 
 You can create a new color like this:
 ```python
@@ -27,8 +27,11 @@ cyan = Color(hsv=[176.8, 65, 92.94])
 cyan = Color(hex='#53EDE5')
 cyan = Color(ryb=[18, 97, 172])
 ```
-
-#### Converting between color formats
+- All values for `RGB` and `RYB` should be between 0 - 255 and `int`  
+- The value of hue for `HSV` and `HSL` should be between 0 - 360 and the other
+  two components should be between 0 - 100. All 3 of them can be either `int` or
+`float`
+- Values for `HEX` should be strings representing 6-digit hex number### Converting between color formats
 
 Any instance of `Color()` is automatically converted to every supported color format when its created, so there is no need to manually convert from one format to another. For any color, no matter how it was created, you can get its value in any format like this:
 
@@ -46,7 +49,7 @@ This makes converting from say `RGB` to `HSL` as easy as doing:
 hsl_values = Color(rgb=[83, 237, 229]).hsl
 ```
 
-#### Accessing values of colors
+### Accessing values of colors
 
 When accessing these attributes for a color, it returns the values back as a `namedtuple` instance. This behaves exactly as a normal `tuple` would, but has an added benefit that its values can be accessed directly via the dot notation. Example:
 ```python
@@ -63,7 +66,7 @@ Rgb(r=83, g=237, b=229)
 ```
 
 
-#### Additional ways to define a color
+### Additional ways to define a color
 
 In addition to the default way to create a color, `Color()` offers additional methods that would enhance your ability to create colors. 
 
@@ -89,7 +92,7 @@ random_cyan = Color(hsv=[176, (RANDOM, 70), 95])
 random_cyan = Color(hsv=[176, (30, RANDOM), 95])
 ```
 
-#### Note: Immutability and Hashibility
+### Note: Immutability and Hashibility
 
 - All instances of colors are immutable, meaning their values can't be changed once they are defined. This means that each instance of `Color()` represents a specific color and will always represent that color. If you feel the need to modify a color, this can easily be done as:
   ```python
@@ -105,7 +108,7 @@ random_cyan = Color(hsv=[176, (30, RANDOM), 95])
   ```
   This results in `True` because both of these `HSL` values map to the same `RGB` value `(212, 212, 219)` and thus represent the same color.
 
-#### Color schemes
+### Color schemes
 
 The `Color()` class also provides some convenience functions to work with color schemes. In the future, these would also be used to build color palettes. For now, the corresponding colors from a color scheme for a specific color can be generated like this:
 ```python
@@ -119,48 +122,48 @@ cyan_shades = cyan.scheme(Schemes.SHADES)
 
 Taking inspiration from traditional art where most of these color schemes originated from, these are calculated using the `RYB` color wheel by default. To use the `RGB` color wheel instead you can pass `in_rgb=True` to the `.scheme()` function. For a list of all the available color schemes and their explanations, check [this page]().
 
-#### Example Usecases
+### Example Usecases
 
-Create a color using `RGB`, use its saturation to create a new color, and print its value as a hex string:
-```python
-orange = Color(rgb=[247, 177, 79])
-cyan = Color(hsv=[176.5, orange.hsv.s, 98])
-print(cyan,hex)  # Output: '#50FAF0'
-```
+1. Create a color using `RGB`, use its saturation to create a new color, and print its value as a hex string:
+    ```python
+    orange = Color(rgb=[247, 177, 79])
+    cyan = Color(hsv=[176.5, orange.hsv.s, 98])
+    print(cyan,hex)  # Output: '#50FAF0'
+    ```
 
-Generating random aesthetically pleasing colors, which for example can be used to color the default profile pictures for users of an app
-```python
-def aesthetic_color():
-    return Color(hsl=[RANDOM, (65, RANDOM), (60, 75)])
-```
-(If you have ever tried generating random colors by randomizing `RGB` values, you would know how badly that works)
+2. Generating random aesthetically pleasing colors, which for example can be used to color the default profile pictures for users of an app
+    ```python
+    def aesthetic_color():
+        return Color(hsl=[RANDOM, (65, RANDOM), (60, 75)])
+    ```
+    (If you have ever tried generating random colors by randomizing `RGB` values, you would know how badly that works)
 
-Finding unique colors:
-```python
-test_set = set([
-    Color(rgb=[61, 245, 245]), Color(hex='#3DF5F5'),
-    Color(hsl=[180, 89.8, 60]), Color(hsl=[179.8, 90.2, 60.1]) 
-])
-print(test_set)  # Output: {Color(rgb=(61, 245, 245))}
-```
-The set contains only one color as all those colors map to the same `RGB` values.
+3. Finding unique colors:
+    ```python
+    test_set = set([
+        Color(rgb=[61, 245, 245]), Color(hex='#3DF5F5'),
+        Color(hsl=[180, 89.8, 60]), Color(hsl=[179.8, 90.2, 60.1]) 
+    ])
+    print(test_set)  # Output: {Color(rgb=(61, 245, 245))}
+    ```
+    The set contains only one color as all those colors map to the same `RGB` values.
 
-Sorting all the pixels in an image horizontally by hue: 
-```python
-from acrylic import Color
-from PIL import Image
+4. Sorting all the pixels in an image horizontally by hue: 
+    ```python
+    from acrylic import Color
+    from PIL import Image
 
-orignal_image = Image.open('test.jpg')
-sorted_img = orignal_image.copy()
-pixels = orignal_image.load()
+    orignal_image = Image.open('test.jpg')
+    sorted_img = orignal_image.copy()
+    pixels = orignal_image.load()
 
-for y in range(sorted_image.height):
-      row = [Color(rgb=pixels[n, y]) for n in range(sorted_image.width)]
-      sorted_row = sorted(row, key=lambda c: c.hsl.h)
-      for x, c in enumerate(sorted_row):
-          sorted_image.putpixel((x, y), c.rgb)
-```
-This example also illustrates how easy it is to integrate `acrylic` with other libraries and seamlessly switch between `RGB` and `HSL`
+    for y in range(sorted_image.height):
+          row = [Color(rgb=pixels[n, y]) for n in range(sorted_image.width)]
+          sorted_row = sorted(row, key=lambda c: c.hsl.h)
+          for x, c in enumerate(sorted_row):
+              sorted_image.putpixel((x, y), c.rgb)
+    ```
+    This example also illustrates how easy it is to integrate `acrylic` with other libraries and seamlessly switch between `RGB` and `HSL`
 
 ## TODO
 - Support for Color Blindness
@@ -171,8 +174,8 @@ This example also illustrates how easy it is to integrate `acrylic` with other l
 
 ## Contributions 
 All contributions to `acrylic` are welcome and appreciated! Ways in which you can contribute are:
-- Report an issue (here)
-- Raise a pull request (here)
+- Report an issue ([here](https://github.com/Arsh23/acrylic/issues))
+- Raise a pull request ([here](https://github.com/Arsh23/acrylic/pulls))
 - Request new features
 - Spread the word about `acrylic`!
 
@@ -180,5 +183,5 @@ All contributions to `acrylic` are welcome and appreciated! Ways in which you ca
 `acrylic` was developed by [Arsh](prdx.me)
 
 ## License
-**MIT License**: Copyright (c) 2020 Arsh
-[LICENSE.txt]()
+**MIT License**: Copyright (c) 2020 Arsh  
+[LICENSE.txt](LICENSE.txt)
