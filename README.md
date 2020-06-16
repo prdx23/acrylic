@@ -31,7 +31,9 @@ cyan = Color(ryb=[18, 97, 172])
 - The value of hue for `HSV` and `HSL` should be between 0 - 360 and the other
   two components should be between 0 - 100. All 3 of them can be either `int` or
 `float`
-- Values for `HEX` should be strings representing 6-digit hex number### Converting between color formats
+- Values for `HEX` should be strings representing 6-digit hex number
+
+### Converting between color formats
 
 Any instance of `Color()` is automatically converted to every supported color format when its created, so there is no need to manually convert from one format to another. For any color, no matter how it was created, you can get its value in any format like this:
 
@@ -184,4 +186,4 @@ All contributions to `acrylic` are welcome and appreciated! Ways in which you ca
 
 ## License
 **MIT License**: Copyright (c) 2020 Arsh  
-[LICENSE.txt](LICENSE.txt)
+[License.txt](https://github.com/Arsh23/acrylic/blob/master/LICENSE.txt)
