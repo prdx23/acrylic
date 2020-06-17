@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="acrylic",
-    version="0.2",
+    version="0.2.1",
     author="Arsh",
     author_email="arsh@pydata.org",
     description="A simple and intuitive library to work with colors in python",
@@ -23,7 +23,7 @@ setuptools.setup(
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
     ],
-    keywords='color colors scheme palette rgb hsv hsl ryb hex',
+    keywords='color colors scheme palette rgb hsv hsl ryb hex colour colours',
     project_urls={
         'Source': 'https://github.com/Arsh23/acrylic',
         'Tracker': 'https://github.com/Arsh23/acrylic/issues',

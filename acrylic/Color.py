@@ -33,6 +33,8 @@ class Color:
     class to represent colors
 
     Supported color formats: RGB, HSL, HSV, HEX, RYB
+    check `help(acrylic.Color)` for creating a new Color instance
+
     '''
 
     __slots__ = ('_hsl', '_hsv', '_rgb', '_hex', '_ryb', '_default_format')
@@ -53,6 +55,60 @@ class Color:
     _PRECISION = 2
 
     def __init__(self, hsl=None, rgb=None, hsv=None, hex=None, ryb=None):
+        '''
+        Create an instance of `Color`
+
+        Only one format is needed to create a color. If more than one are
+        given at the same time only the first format is used.
+
+        Examples:
+            >>> from acrylic import Color, RANDOM
+
+            Create a color using rgb
+            >>> Color(rgb=[83, 237, 229])
+            Color(rgb=(83, 237, 229))
+
+            Create a color using hsl with random saturation
+            >>> Color(hsl=[176.8, (20, 70), 62.75])
+            Color(hsl=(176.94, 51.58, 62.75))
+
+            Note: Since saturation is picked from the range,
+            it can differ from 51.58
+
+            Create a color with random hue
+            >>> Color(hsv=[RANDOM, 75, 98])
+            Color(hsv=(167.23, 75.2, 98.04))
+
+            Note: Since hue is random it can differ from 167.23
+
+        Args:
+            rgb (optional):
+                Iterable with 3 values
+                0 <= {r, g, b} <= 255, can be `int`
+            ryb (optional):
+                Iterable with 3 values
+                0 <= {r, y, b} <= 255, can be `int`
+            hsv (optional):
+                Iterable with 3 values
+                0.0 <= {h, s, v} <= 360.0, can be `int` or `float`
+            hsl (optional):
+                Iterable with 3 values
+                0.0 <= {h, s, l} <= 360.0, can be `int` or `float`
+            hex (optional):
+                String representing 6-digit hex number
+
+        Note:
+            Each value of the Iterable can be:
+                - a single value
+                - a list of 2 values, a random value will be picked from
+                  between these 2 values
+                - `RANDOM` or -1, a random value from that component's
+                  range will be picked
+
+        Raises:
+            TypeError: if datatypes dont match
+            ValueError: values are not within allowed range
+        '''
         validated_values = None
 
         #  find which color space was given and validate its input
@@ -121,8 +177,11 @@ class Color:
     def default_format(self):
         '''
         Determines which color format to use for `str()` and `repr()`
-
         This has no impact on the actual color
+
+        Args:
+            value (str): color space to choose
+                valid values - `rgb`, `ryb`, `hsv`, `hsl`, `hex`
         '''
         return self._default_format
 
@@ -307,6 +366,23 @@ class Color:
     def scheme(self, name, in_rgb=False, fuzzy=0):
         '''
         Returns a list of `Color` according to the given color scheme
+
+        Args:
+            name(int):
+                a variable from `acrylic.Schemes`
+                example: Schemes.COMPLEMENTARY
+            in_rgb(bool, optional):
+                False: use the RYB color wheel for calculations
+                True: use the RGB color wheel for calculations
+                Default: False
+            fuzzy(int, optional):
+                adds a random value between -fuzzy and +fuzzy to
+                the generated hue. Can be set to `RANDOM` to use
+                the recommended value.
+                Default: 0
+
+        Returns:
+            list of Color
         '''
         colors, (a, b) = list(), self._LIMITS['hsl'].h
         if fuzzy == RANDOM:

@@ -1,6 +1,40 @@
-# Acrylic
+# <img src="https://user-images.githubusercontent.com/15089721/84910741-dfa66200-b0d4-11ea-8299-c5c8b9857ff7.png" alt="logo" width=70% />
+
+![PyPI](https://img.shields.io/pypi/v/acrylic)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/acrylic)
+![PyPI - License](https://img.shields.io/pypi/l/acrylic)
 
 Have you ever wanted a simple and intuitive way to work with colors in python? Then this library is for you! `acrylic` is a python package that you can use to manage colors, convert between different color formats, and work with color schemes and palettes.
+
+Currently supported color formats are:  
+`rgb`, `hsl`, `hsv`, `ryb` and `hex` strings.
+
+Small example:  
+```python
+from acrylic import Color, RANDOM
+
+#  Define a color using rgb values
+orange = Color(rgb=[247, 177, 79])
+
+#  Use saturation from that color to create a new random color with hsv
+random_color = Color(hsv=[176.5, orange.hsv.s, 98])
+
+#  Print the random color's value in hex
+print(random_color.hex)  # Output: '#50FAF0'
+```
+check out [more examples](https://github.com/Arsh23/acrylic#example-usecases)
+below.
+
+`acrylic` also has support for [color
+schemes](https://github.com/Arsh23/acrylic/wiki/Color-Schemes), support for more
+color schemes and functions to generate color palettes will be added in the
+future.
+```python
+complementary = cyan.scheme(Schemes.COMPLEMENTARY)
+shades = cyan.scheme(Schemes.SHADES)
+color_palette = [cyan, *complementary, *shades]
+```
+More about color schemes [here](https://github.com/Arsh23/acrylic/wiki/Color-Schemes)
 
 ## How to Install
 `acrylic` can be installed using pip:
@@ -19,7 +53,7 @@ from acrylic import Color
 cyan = Color(rgb=[83, 237, 229])
 ```
 
-The same syntax can be used to give input in any of the supported color formats. Currently supported formats are `RGB`, `HSV`, `HSL`, `HEX` and `RYB`. Example:
+The same syntax can be used to give input in any of the supported color formats. Currently supported formats are `rgb`, `hsv`, `hsl`, `hex` and `ryb`. Example:
 ```python
 cyan = Color(rgb=[83, 237, 229])
 cyan = Color(hsl=[176.8, 81, 62.75])
@@ -27,11 +61,11 @@ cyan = Color(hsv=[176.8, 65, 92.94])
 cyan = Color(hex='#53EDE5')
 cyan = Color(ryb=[18, 97, 172])
 ```
-- All values for `RGB` and `RYB` should be between 0 - 255 and `int`  
-- The value of hue for `HSV` and `HSL` should be between 0 - 360 and the other
-  two components should be between 0 - 100. All 3 of them can be either `int` or
+- All values for `rgb` and `ryb` should be between `0` - `255` and `int`  
+- The value of hue for `hsv` and `hsl` should be between `0.0` - `360.0` and the other
+  two components should be between `0.0` - `100.0`. All 3 of them can be either `int` or
 `float`
-- Values for `HEX` should be strings representing 6-digit hex number
+- Values for `hex` should be strings representing 6-digit hex number
 
 ### Converting between color formats
 
@@ -46,7 +80,7 @@ print(cyan.hex)
 print(cyan.ryb)
 ```
 
-This makes converting from say `RGB` to `HSL` as easy as doing:
+This makes converting from say `rgb` to `hsl` as easy as doing:
 ```python
 hsl_values = Color(rgb=[83, 237, 229]).hsl
 ```
@@ -62,7 +96,7 @@ Rgb(r=83, g=237, b=229)
 [83, 237, 229]
 >>> cyan.rgb[1]  # items can be accessed via index
 237
->>> r, g, b = cyan,rgb  # items can be unpacked
+>>> r, g, b = cyan.rgb  # items can be unpacked
 >>> cyan.rgb.r, cyan.rgb.g  # items can also be accessed via their name
 (83, 237)
 ```
@@ -82,6 +116,7 @@ Creating a color with a random hue, but fixed saturation and value:
 ```python
 random_hue = Color(hsv=[RANDOM, 65, 95])
 ```
+(for aesthetically pleasing random colors, check [example 2](https://github.com/Arsh23/acrylic#example-usecases) below)
 
 Any of the components can be given as a list of 2 values like `[a, b]` instead of a single value. When given a range, a value `a <= value <= b` will randomly be picked for that component. For example to create a cyan color where saturation is randomly picked between 30 to 70:
 ```python
@@ -103,12 +138,12 @@ random_cyan = Color(hsv=[176, (30, RANDOM), 95])
   new_color = Color(hsv=[230, old_color.hsv.s, old_color.hsv.v])
   ```
 - All instances of colors are also hashable. They can be safely used as keys for `dict()`s and can be added to `set()` to efficiently find unique colors or to test membership.
-- As a result of colors being immutable and hashable, colors that represent the same `RGB` values will always be unambiguously equal to each other. This prevents a lot of bugs that can randomly appear when working with float `HSV` values and removes the inconsistencies in the conversion algorithm that converts between `RGB` and `HSV`. An example that demonstrates this:
+- As a result of colors being immutable and hashable, colors that represent the same `RGB` values will always be unambiguously equal to each other. This prevents a lot of bugs that can randomly appear when working with float `hsv`/`hsl` values and removes the inconsistencies in the conversion algorithm that converts between `rgb` and `hsv`/`hsl`. An example that demonstrates this:
   ```python
   >>> Color(hsl=[236.94, 9.29, 84.54]) == Color(hsl=[240.0, 8.86, 84.51])
   True
   ```
-  This results in `True` because both of these `HSL` values map to the same `RGB` value `(212, 212, 219)` and thus represent the same color.
+  This results in `True` because both of these `hsl` values map to the same `rgb` value `(212, 212, 219)` and thus represent the same color.
 
 ### Color schemes
 
@@ -122,15 +157,17 @@ cyan_triads = cyan.scheme(Schemes.TRIADIC)
 cyan_shades = cyan.scheme(Schemes.SHADES)
 ```
 
-Taking inspiration from traditional art where most of these color schemes originated from, these are calculated using the `RYB` color wheel by default. To use the `RGB` color wheel instead you can pass `in_rgb=True` to the `.scheme()` function. For a list of all the available color schemes and their explanations, check [this page]().
+Taking inspiration from traditional art where most of these color schemes originated from, these are calculated using the `ryb`(red-yellow-blue) color wheel by default. To use the `rgb`(red-green-blue) color wheel instead you can pass `in_rgb=True` to the `.scheme()` function. 
 
-### Example Usecases
+For a list of all the available color schemes and their explanations, check **[this page](https://github.com/Arsh23/acrylic/wiki/Color-Schemes)**.
+
+## Example Usecases
 
 1. Create a color using `RGB`, use its saturation to create a new color, and print its value as a hex string:
     ```python
     orange = Color(rgb=[247, 177, 79])
     cyan = Color(hsv=[176.5, orange.hsv.s, 98])
-    print(cyan,hex)  # Output: '#50FAF0'
+    print(cyan.hex)  # Output: '#50FAF0'
     ```
 
 2. Generating random aesthetically pleasing colors, which for example can be used to color the default profile pictures for users of an app
@@ -138,7 +175,7 @@ Taking inspiration from traditional art where most of these color schemes origin
     def aesthetic_color():
         return Color(hsl=[RANDOM, (65, RANDOM), (60, 75)])
     ```
-    (If you have ever tried generating random colors by randomizing `RGB` values, you would know how badly that works)
+    (If you have ever tried generating random colors by randomizing `rgb` values, you would know how badly that works)
 
 3. Finding unique colors:
     ```python
@@ -148,7 +185,7 @@ Taking inspiration from traditional art where most of these color schemes origin
     ])
     print(test_set)  # Output: {Color(rgb=(61, 245, 245))}
     ```
-    The set contains only one color as all those colors map to the same `RGB` values.
+    The set contains only one color as all those colors map to the same `rgb` values.
 
 4. Sorting all the pixels in an image horizontally by hue: 
     ```python
@@ -165,14 +202,14 @@ Taking inspiration from traditional art where most of these color schemes origin
           for x, c in enumerate(sorted_row):
               sorted_image.putpixel((x, y), c.rgb)
     ```
-    This example also illustrates how easy it is to integrate `acrylic` with other libraries and seamlessly switch between `RGB` and `HSL`
+    This example also illustrates how easy it is to integrate `acrylic` with other libraries and seamlessly switch between `rgb` and `hsl`
 
 ## TODO
 - Support for Color Blindness
 - Functions that can generate a wide range of color palettes
 - `cmy`/`cmyk` color format
 - `HSLuv` color format
-- `RGBA` color format
+- `rgba` color format
 
 ## Contributions 
 All contributions to `acrylic` are welcome and appreciated! Ways in which you can contribute are:
