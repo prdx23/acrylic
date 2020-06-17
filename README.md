@@ -17,7 +17,7 @@ from acrylic import Color, RANDOM
 orange = Color(rgb=[247, 177, 79])
 
 #  Use saturation from that color to create a new random color with hsv
-random_color = Color(hsv=[176.5, orange.hsv.s, 98])
+random_color = Color(hsv=[RANDOM, orange.hsv.s, 98])
 
 #  Print the random color's value in hex
 print(random_color.hex)  # Output: '#50FAF0'
