@@ -1,4 +1,4 @@
-# <img src="https://user-images.githubusercontent.com/15089721/84910741-dfa66200-b0d4-11ea-8299-c5c8b9857ff7.png" alt="logo" width=70% />
+# <img src="https://user-images.githubusercontent.com/15089721/85012237-5cdae100-b180-11ea-8fc2-9946de05653b.png" alt="logo" width=70% />
 
 ![PyPI](https://img.shields.io/pypi/v/acrylic)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/acrylic)
