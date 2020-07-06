@@ -22,11 +22,11 @@ random_color = Color(hsv=[RANDOM, orange.hsv.s, 98])
 #  Print the random color's value in hex
 print(random_color.hex)  # Output: '#50FAF0'
 ```
-check out [more examples](https://github.com/Arsh23/acrylic#example-usecases)
+check out [more examples](https://github.com/prdx23/acrylic#example-usecases)
 below.
 
 `acrylic` also has support for [color
-schemes](https://github.com/Arsh23/acrylic/wiki/Color-Schemes), support for more
+schemes](https://github.com/prdx23/acrylic/wiki/Color-Schemes), support for more
 color schemes and functions to generate color palettes will be added in the
 future.
 ```python
@@ -34,7 +34,7 @@ complementary = cyan.scheme(Schemes.COMPLEMENTARY)
 shades = cyan.scheme(Schemes.SHADES)
 color_palette = [cyan, *complementary, *shades]
 ```
-More about color schemes [here](https://github.com/Arsh23/acrylic/wiki/Color-Schemes)
+More about color schemes [here](https://github.com/prdx23/acrylic/wiki/Color-Schemes)
 
 ## How to Install
 `acrylic` can be installed using pip:
@@ -116,7 +116,7 @@ Creating a color with a random hue, but fixed saturation and value:
 ```python
 random_hue = Color(hsv=[RANDOM, 65, 95])
 ```
-(for aesthetically pleasing random colors, check [example 2](https://github.com/Arsh23/acrylic#example-usecases) below)
+(for aesthetically pleasing random colors, check [example 2](https://github.com/prdx23/acrylic#example-usecases) below)
 
 Any of the components can be given as a list of 2 values like `[a, b]` instead of a single value. When given a range, a value `a <= value <= b` will randomly be picked for that component. For example to create a cyan color where saturation is randomly picked between 30 to 70:
 ```python
@@ -159,7 +159,7 @@ cyan_shades = cyan.scheme(Schemes.SHADES)
 
 Taking inspiration from traditional art where most of these color schemes originated from, these are calculated using the `ryb`(red-yellow-blue) color wheel by default. To use the `rgb`(red-green-blue) color wheel instead you can pass `in_rgb=True` to the `.scheme()` function. 
 
-For a list of all the available color schemes and their explanations, check **[this page](https://github.com/Arsh23/acrylic/wiki/Color-Schemes)**.
+For a list of all the available color schemes and their explanations, check **[this page](https://github.com/prdx23/acrylic/wiki/Color-Schemes)**.
 
 ## Example Usecases
 
@@ -213,8 +213,8 @@ For a list of all the available color schemes and their explanations, check **[t
 
 ## Contributions 
 All contributions to `acrylic` are welcome and appreciated! Ways in which you can contribute are:
-- Report an issue ([here](https://github.com/Arsh23/acrylic/issues))
-- Raise a pull request ([here](https://github.com/Arsh23/acrylic/pulls))
+- Report an issue ([here](https://github.com/prdx23/acrylic/issues))
+- Raise a pull request ([here](https://github.com/prdx23/acrylic/pulls))
 - Request new features
 - Spread the word about `acrylic`!
 
@@ -223,4 +223,4 @@ All contributions to `acrylic` are welcome and appreciated! Ways in which you ca
 
 ## License
 **MIT License**: Copyright (c) 2020 Arsh  
-[License.txt](https://github.com/Arsh23/acrylic/blob/master/LICENSE.txt)
+[License.txt](https://github.com/prdx23/acrylic/blob/master/LICENSE.txt)
