@@ -1,3 +1,4 @@
+import itertools
 from random import randint, uniform
 
 
@@ -23,33 +24,35 @@ def in_range(x, a, b, p):
 
 
 def check_datatype(datatype, value, param):
-    msg = f'cannot convert {{}} given for {param!r} to {datatype.__name__}'
     try:
         return datatype(value)
     except ValueError:
-        raise ValueError(msg.format(f'value {value!r}')) from None
+        msg = f'cannot convert value {value!r} given for {param!r}'
+        msg += f'to {datatype.__name__}'
+        raise ValueError(msg) from None
     except TypeError:
-        cls = type(value).__name__
-        raise TypeError(msg.format(f'object of type {cls!r}')) from None
+        msg = f'cannot convert object of type {type(value).__name__!r} '
+        msg += f'given for {param!r} to {datatype.__name__}'
+        raise TypeError(msg) from None
 
 
 def check_iter(iterable, length, param):
     try:
-        generator = (x for x in iterable)
+        values = tuple(itertools.islice(iterable, length + 1))
     except TypeError:
         cls = type(iterable).__name__
         msg = f'{cls!r} object given for {param!r} is not iterable'
         raise TypeError(msg) from None
 
     try:
-        values = [next(generator) for _ in range(length)]
-    except StopIteration:
+        values[length - 1]
+    except IndexError:
         msg = f'{param!r} should have {length} values'
         raise ValueError(msg) from None
 
     try:
-        next(generator)
-    except StopIteration:
+        values[length]
+    except IndexError:
         return values
     else:
         msg = f'{param!r} should have {length} values'

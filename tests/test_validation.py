@@ -1,5 +1,6 @@
 import pytest
 from decimal import Decimal
+from collections.abc import Iterable
 
 from acrylic.Validator import (
     in_range, check_datatype, check_iter, validate_values, SCHEMAS
@@ -65,7 +66,7 @@ class Test_check_iter():
 
     def test_basic(self):
         values = check_iter([12, 23, 34], 3, 'test')
-        assert isinstance(values, list) and values == [12, 23, 34]
+        assert isinstance(values, Iterable) and values == (12, 23, 34)
 
     def test_limits(self):
         with pytest.raises(ValueError):
@@ -81,7 +82,7 @@ class Test_check_iter():
         ]
         for option in options:
             values = check_iter(option, 2, 'test')
-            assert isinstance(values, list) and values == [12, 23]
+            assert isinstance(values, Iterable) and values == (12, 23)
 
     def test_non_iterables(self):
         options = [123, 12.23, FakeInt(123), FakeFloat(12.23)]
@@ -91,7 +92,7 @@ class Test_check_iter():
 
     def test_generators(self):
         values = check_iter(fake_rgb(), 3, 'test')
-        assert isinstance(values, list) and values == [12, 23, 34]
+        assert isinstance(values, Iterable) and values == (12, 23, 34)
 
         with pytest.raises(ValueError):
             check_iter(fake_rgb(), 4, 'test')
