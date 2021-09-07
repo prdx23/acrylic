@@ -3,8 +3,9 @@ from decimal import Decimal
 from collections.abc import Iterable
 
 from acrylic.Validator import (
-    in_range, check_datatype, check_iter, validate_values, SCHEMAS
+    in_range, check_datatype, check_iter, validate_values, validate_string
 )
+from acrylic.Defaults import SCHEMAS, Rgb
 from acrylic import RANDOM
 
 
@@ -99,16 +100,16 @@ class Test_check_iter():
         with pytest.raises(ValueError):
             check_iter(fake_rgb(), 2, 'test')
         with pytest.raises(ValueError):
-            check_iter(infinite(), 3, 'test')
+            check_iter(infinite_generator(), 3, 'test')
 
 
 class Test_validate_values():
 
-    def test_basic_rgb(self):
-        assert validate_values([12, 23, 34], 'rgb') == [12, 23, 34]
+    def test_rgb_basic(self):
+        assert validate_values([12, 23, 34], 'rgb') == Rgb(12, 23, 34)
 
-    def test_range_rgb(self):
-        schema = SCHEMAS['rgb'][0]
+    def test_rgb_range(self):
+        schema = SCHEMAS['rgb'].format.r
         for _ in range(100):
             r, _, _ = validate_values([(10, 100), 0, 0], 'rgb')
             assert r >= 10 and r <= 100
@@ -127,14 +128,14 @@ class Test_validate_values():
             r, _, _ = validate_values(input_values, 'rgb')
             assert r >= 12 and r <= 100
 
-    def test_range_error_rgb(self):
+    def test_rgb_range_error(self):
         with pytest.raises(ValueError):
             validate_values([[10], 0, 0], 'rgb')
         with pytest.raises(ValueError):
             validate_values([[12, 23, 34], 0, 0], 'rgb')
 
-    def test_random_rgb(self):
-        schema = SCHEMAS['rgb'][0]
+    def test_rgb_random(self):
+        schema = SCHEMAS['rgb'].format.r
         for _ in range(100):
             r, _, _ = validate_values(RANDOM, 'rgb')
             assert r >= schema[0] and r <= schema[1]
@@ -150,6 +151,68 @@ class Test_validate_values():
 
             r, _, _ = validate_values([(RANDOM, RANDOM), 0, 0], 'rgb')
             assert r >= schema[0] and r <= schema[1]
+
+
+class Test_validate_string():
+
+    def test_hex_basic(self):
+        assert validate_string('#63B2A4', 'hex') == '#63B2A4'
+        assert validate_string('#63b2a4', 'hex') == '#63B2A4'
+        assert validate_string('63B2A4', 'hex') == '#63B2A4'
+        assert validate_string('0x63b2a4', 'hex') == '#63B2A4'
+
+    def test_hex_short(self):
+        assert validate_string('#6ba', 'hex') == '#66BBAA'
+        assert validate_string('6ba', 'hex') == '#66BBAA'
+
+    def test_hex_alpha(self):
+        assert validate_string('#63b2a4ff', 'hex') == '#63B2A4'
+        assert validate_string('63b2a4ff', 'hex') == '#63B2A4'
+
+    def test_hex_extra(self):
+        assert validate_string(123456, 'hex') == '#123456'
+        assert validate_string(FakeStr('#63B2A4'), 'hex') == '#63B2A4'
+
+    def test_hex_errors(self):
+        with pytest.raises(ValueError):
+            validate_string('#63B2AX', 'hex')
+
+        with pytest.raises(ValueError):
+            validate_string('#63B2A4C', 'hex')
+
+        with pytest.raises(ValueError):
+            validate_string('63B2C', 'hex')
+
+        with pytest.raises(ValueError):
+            validate_string(FakeInt('#63B2A4'), 'hex')
+
+        with pytest.raises(ValueError):
+            # raw hex number evals to int before we can detect
+            validate_string(0x63b2a4, 'hex')
+
+    def test_hex_random(self):
+        r = validate_string(RANDOM, 'hex')
+        assert validate_string(r, 'hex') == r
+
+    # - - - - - - - - - - -
+
+    def test_name_basic(self):
+        assert validate_string('cyan', 'name') == 'cyan'
+
+    def test_name_other(self):
+        assert validate_string('\n Alice  Blue   \n', 'name') == 'aliceblue'
+        assert validate_string(FakeStr('Alice  Blue '), 'name') == 'aliceblue'
+
+    def test_name_random(self):
+        r = validate_string(RANDOM, 'name')
+        assert validate_string(r, 'name') == r
+
+    def test_name_error(self):
+        with pytest.raises(ValueError):
+            validate_string('abcd', 'name')
+
+        with pytest.raises(ValueError):
+            validate_string(123, 'name')
 
 
 #  - - -  Helper Classes  - - -
@@ -208,6 +271,6 @@ def fake_rgb():
     yield 34
 
 
-def infinite():
+def infinite_generator():
     while True:
         yield 0

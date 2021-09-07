@@ -1,20 +1,6 @@
 import itertools
-from random import randint, uniform
 
-
-RANDOM = -1
-PRECISION = 3
-SCHEMAS = {
-    'rgb': [(0, 255, 'red'), (0, 255, 'green'), (0, 255, 'blue')],
-    'hsl': [(0, 360.0, 'hue'), (0, 100.0, 'saturation'), (0, 100.0, 'lightness')],
-    'hsv': [(0, 360.0, 'hue'), (0, 100.0, 'saturation'), (0, 100.0, 'value')],
-    'ryb': [(0, 255, 'red'), (0, 255, 'yellow'), (0, 255, 'blue')],
-}
-
-RNGS = {
-    int: lambda a, b: randint(a, b),
-    float: lambda a, b: round(uniform(a, b), PRECISION),
-}
+from acrylic.Defaults import RANDOM, PRECISION, SCHEMAS
 
 
 def in_range(x, a, b, p):
@@ -61,20 +47,19 @@ def check_iter(iterable, length, param):
 
 def validate_values(values, colorspace):
     schema = SCHEMAS[colorspace]
-    datatype = type(schema[0][1])
-    rng = RNGS[datatype]
+    datatype = schema.input_type
 
     if values == RANDOM:
-        return [rng(a, b) for a, b, _ in schema]
+        return [schema.rng(a, b) for a, b in schema.format]
 
-    values = check_iter(values, len(schema), colorspace)
+    values = check_iter(values, schema.length, colorspace)
 
-    result = list()
-    for x, (a, b, p) in zip(values, schema):
+    validated = list()
+    for x, (a, b), p in zip(values, schema.format, schema.names):
         value = None
 
         if x == RANDOM:
-            result.append(rng(a, b))
+            validated.append(schema.rng(a, b))
             continue
 
         try:
@@ -89,24 +74,51 @@ def validate_values(values, colorspace):
                 raise ValueError(msg) from None
         else:
             if datatype != float:
-                result.append(in_range(value, a, b, p))
+                validated.append(in_range(value, a, b, p))
             else:
-                result.append(round(in_range(value, a, b, p), PRECISION))
+                validated.append(round(in_range(value, a, b, p), PRECISION))
             continue
 
         limits = [check_datatype(datatype, x, 'r') for x in limits]
 
         if limits == [-1, -1]:
-            result.append(rng(a, b))
+            validated.append(schema.rng(a, b))
             continue
 
         limits = [in_range(x, a, b, p) if x != RANDOM else x for x in limits]
 
         if limits[0] == RANDOM:
-            limits[0] = rng(a, limits[1])
+            limits[0] = schema.rng(a, limits[1])
         if limits[1] == RANDOM:
-            limits[1] = rng(limits[0], b)
+            limits[1] = schema.rng(limits[0], b)
 
-        result.append(rng(min(limits), max(limits)))
+        validated.append(schema.rng(min(limits), max(limits)))
 
-    return result
+    return schema.output_type(*validated)
+
+
+def validate_string(value, colorspace):
+    schema = SCHEMAS[colorspace]
+
+    if value == RANDOM:
+        return schema.rng
+
+    value = check_datatype(schema.input_type, value, colorspace)
+
+    if colorspace == 'hex':
+        match = schema.format.match(value)
+        if match and match.group('hex'):
+            return schema.output_type(match.group('hex'))
+        elif match and match.group('hex_alpha'):
+            return schema.output_type(match.group('hex_alpha'))
+        elif match and match.group('hex_short'):
+            extended = ''.join(f'{x}{x}' for x in match.group('hex_short'))
+            return schema.output_type(extended)
+
+    if colorspace == 'name':
+        value = ''.join(value.strip().lower().split())
+        print(value)
+        if value in schema.format:
+            return schema.output_type(value)
+
+    raise ValueError(f'{value!r} is not a valid value for {colorspace!r}')
