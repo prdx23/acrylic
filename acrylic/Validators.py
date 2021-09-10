@@ -3,6 +3,13 @@ import itertools
 from acrylic.Defaults import RANDOM, PRECISION, SCHEMAS
 
 
+def validate(value, colorspace):
+    if SCHEMAS[colorspace].validation_type == 'values':
+        return validate_values(value, colorspace)
+    if SCHEMAS[colorspace].validation_type == 'string':
+        return validate_string(value, colorspace)
+
+
 def in_range(x, a, b, p):
     if x < a or x > b:
         raise ValueError(f'{p!r} should be in range {a} - {b}')
@@ -106,18 +113,17 @@ def validate_string(value, colorspace):
     value = check_datatype(schema.input_type, value, colorspace)
 
     if colorspace == 'hex':
-        match = schema.format.match(value)
-        if match and match.group('hex'):
+        match = schema.format.match(value, 0, 10)
+        if match and match.lastgroup == 'hex':
             return schema.output_type(match.group('hex'))
-        elif match and match.group('hex_alpha'):
+        elif match and match.lastgroup == 'hex_alpha':
             return schema.output_type(match.group('hex_alpha'))
-        elif match and match.group('hex_short'):
+        elif match and match.lastgroup == 'hex_short':
             extended = ''.join(f'{x}{x}' for x in match.group('hex_short'))
             return schema.output_type(extended)
 
     if colorspace == 'name':
         value = ''.join(value.strip().lower().split())
-        print(value)
         if value in schema.format:
             return schema.output_type(value)
 

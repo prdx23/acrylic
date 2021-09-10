@@ -1,0 +1,10 @@
+
+v0.3.0
+- rewrote the validation system to follow duck typing conventions
+- optimized the validation code to remove inefficient parts
+- added option to select colors by name, using any valid CSS3 color name
+- added more detailed tests for validation and conversion
+
+
+v0.2.4 & older
+- changelog not maintained here

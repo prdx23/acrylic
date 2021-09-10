@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from collections.abc import Iterable
 
-from acrylic.Validator import (
+from acrylic.Validators import (
     in_range, check_datatype, check_iter, validate_values, validate_string
 )
 from acrylic.Defaults import SCHEMAS, Rgb

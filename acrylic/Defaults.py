@@ -11,11 +11,11 @@ Hsv = namedtuple('Hsv', 'h s v')
 Ryb = namedtuple('Ryb', 'r y b')
 
 Schema = namedtuple(
-    'Schema', 'format names length rng input_type output_type'
+    'Schema', 'format names length rng input_type output_type validation_type'
 )
 
 RANDOM = -1
-PRECISION = 3
+PRECISION = 2
 
 
 SCHEMAS = {
@@ -26,6 +26,7 @@ SCHEMAS = {
         rng=lambda a, b: randint(a, b),
         input_type=int,
         output_type=Rgb,
+        validation_type='values',
     ),
     'hsl': Schema(
         format=Hsl((0, 360.0), (0, 100.0), (0, 100.0)),
@@ -34,6 +35,7 @@ SCHEMAS = {
         rng=lambda a, b: round(uniform(a, b), PRECISION),
         input_type=float,
         output_type=Hsl,
+        validation_type='values',
     ),
     'hsv': Schema(
         format=Hsv((0, 360.0), (0, 100.0), (0, 100.0)),
@@ -42,6 +44,7 @@ SCHEMAS = {
         rng=lambda a, b: round(uniform(a, b), PRECISION),
         input_type=float,
         output_type=Hsv,
+        validation_type='values',
     ),
     'ryb': Schema(
         format=Ryb((0, 255), (0, 255), (0, 255)),
@@ -50,6 +53,7 @@ SCHEMAS = {
         rng=lambda a, b: randint(a, b),
         input_type=int,
         output_type=Ryb,
+        validation_type='values',
     ),
     'hex': Schema(
         format=re.compile(r''.join([
@@ -64,6 +68,7 @@ SCHEMAS = {
         rng='#' + ''.join(choice('0123456789ABCDEF') for _ in range(6)),
         input_type=str,
         output_type=lambda x: f'#{x.upper()}',
+        validation_type='string',
     ),
     'name': Schema(
         format=color_names,
@@ -72,5 +77,6 @@ SCHEMAS = {
         rng=choice(list(color_names.keys())),
         input_type=str,
         output_type=str,
+        validation_type='string',
     ),
 }
