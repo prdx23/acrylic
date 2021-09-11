@@ -20,12 +20,12 @@ def rgb_to_hsv(rgb):
     norm = [x / m[1] for x, m in zip(rgb, rgb_format)]
     h, s, v = colorsys.rgb_to_hsv(*norm)
 
-    hsl = [round(x * m[1], PRECISION) for x, m in zip([h, s, v], hsv_format)]
-    return SCHEMAS['hsl'].output_type(*hsl)
+    hsv = [round(x * m[1], PRECISION) for x, m in zip([h, s, v], hsv_format)]
+    return SCHEMAS['hsv'].output_type(*hsv)
 
 
 def rgb_to_hex(rgb):
-    return f'#{"".join(f"{x:02X}" for x in rgb)}'.upper()
+    return SCHEMAS['hex'].output_type(''.join(f'{x:02X}' for x in rgb))
 
 
 def rgb_to_name(rgb):
@@ -44,7 +44,6 @@ def rgb_to_ryb(rgb):
     rgb_r, rgb_g, rgb_b = [x - white for x in (rgb_r, rgb_g, rgb_b)]
 
     yellow = min(rgb_r, rgb_g)
-    print(yellow, rgb_r, rgb_g)
     ryb_r = rgb_r - yellow
     ryb_y = (yellow + rgb_g) / 2
     ryb_b = (rgb_b + rgb_g - yellow) / 2

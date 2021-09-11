@@ -1,6 +1,6 @@
 import re
-from random import randint, uniform, choice
 from collections import namedtuple
+from random import randint, uniform, choice
 
 from acrylic.color_names import color_names
 
@@ -10,9 +10,12 @@ Hsl = namedtuple('Hsl', 'h s l')
 Hsv = namedtuple('Hsv', 'h s v')
 Ryb = namedtuple('Ryb', 'r y b')
 
+
 Schema = namedtuple(
-    'Schema', 'format names length rng input_type output_type validation_type'
+    'Schema',
+    'format names length rng input_type output_type validation_type'
 )
+
 
 RANDOM = -1
 PRECISION = 2

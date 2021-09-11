@@ -20,7 +20,7 @@ def check_datatype(datatype, value, param):
     try:
         return datatype(value)
     except ValueError:
-        msg = f'cannot convert value {value!r} given for {param!r}'
+        msg = f'cannot convert value {value!r} given for {param!r} '
         msg += f'to {datatype.__name__}'
         raise ValueError(msg) from None
     except TypeError:

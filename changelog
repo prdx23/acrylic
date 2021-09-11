@@ -4,7 +4,9 @@ v0.3.0
 - optimized the validation code to remove inefficient parts
 - added option to select colors by name, using any valid CSS3 color name
 - added more detailed tests for validation and conversion
+- changed conversion to lazily evaluate when needed
+- rewrote most of Color() class to reduce complexity
 
 
 v0.2.4 & older
-- changelog not maintained here
+- changelog not maintained
