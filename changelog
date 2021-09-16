@@ -6,6 +6,7 @@ v0.3.0
 - added more detailed tests for validation and conversion
 - changed conversion to lazily evaluate when needed
 - rewrote most of Color() class to reduce complexity
+- added tox with docker to automate tests across different python versions
 
 
 v0.2.4 & older

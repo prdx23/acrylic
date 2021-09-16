@@ -7,7 +7,7 @@
 Have you ever wanted a simple and intuitive way to work with colors in python? Then this library is for you! `acrylic` is a python package that you can use to manage colors, convert between different color formats, and work with color schemes and palettes.
 
 Currently supported color formats are:  
-`rgb`, `hsl`, `hsv`, `ryb` and `hex` strings.
+`rgb`, `hsl`, `hsv`, `ryb`, `hex`, `name`
 
 Small example:  
 ```python
@@ -55,17 +55,17 @@ cyan = Color(rgb=[83, 237, 229])
 
 The same syntax can be used to give input in any of the supported color formats. Currently supported formats are `rgb`, `hsv`, `hsl`, `hex` and `ryb`. Example:
 ```python
-cyan = Color(rgb=[83, 237, 229])
-cyan = Color(hsl=[176.8, 81, 62.75])
-cyan = Color(hsv=[176.8, 65, 92.94])
-cyan = Color(hex='#53EDE5')
-cyan = Color(ryb=[18, 97, 172])
+color = Color(rgb=[127, 255, 212])
+color = Color(hsl=[160, 100, 75])
+color = Color(hsv=[160, 50, 100])
+color = Color(hex='#7fffd4')
+color = Color(name='aquamarine')
+color = Color(ryb=[0, 77, 128])
 ```
-- All values for `rgb` and `ryb` should be between `0` - `255` and `int`  
-- The value of hue for `hsv` and `hsl` should be between `0.0` - `360.0` and the other
-  two components should be between `0.0` - `100.0`. All 3 of them can be either `int` or
-`float`
-- Values for `hex` should be strings representing 6-digit hex number
+- All values for `rgb` and `ryb` should be between `0` - `255`  
+- The value of hue for `hsv` and `hsl` should be between `0.0` - `360.0` and the other two components should be between `0.0` - `100.0`.  
+- Values for `hex` should be a string representing 6-digit hex number  
+- Values for `name` should be a string representing a valid CSS3 color name  
 
 ### Converting between color formats
 
@@ -77,6 +77,7 @@ print(cyan.rgb)
 print(cyan.hsv)
 print(cyan.hsl)
 print(cyan.hex)
+print(cyan.name)
 print(cyan.ryb)
 ```
 
@@ -138,6 +139,13 @@ random_cyan = Color(hsv=[176, (30, RANDOM), 95])
   new_color = Color(hsv=[230, old_color.hsv.s, old_color.hsv.v])
   ```
 - All instances of colors are also hashable. They can be safely used as keys for `dict()`s and can be added to `set()` to efficiently find unique colors or to test membership.
+  ```python
+  >>> colors = {Color(hex='#7fffd4'): 'Can be used in dict() keys!'}
+  >>> Color(name='aquamarine') in colors
+  True
+  >>> colors[Color(rgb=[127, 255, 212])]
+  'Can be used in dict() keys!'
+  ```
 - As a result of colors being immutable and hashable, colors that represent the same `RGB` values will always be unambiguously equal to each other. This prevents a lot of bugs that can randomly appear when working with float `hsv`/`hsl` values and removes the inconsistencies in the conversion algorithm that converts between `rgb` and `hsv`/`hsl`. An example that demonstrates this:
   ```python
   >>> Color(hsl=[236.94, 9.29, 84.54]) == Color(hsl=[240.0, 8.86, 84.51])
@@ -204,22 +212,12 @@ For a list of all the available color schemes and their explanations, check **[t
     ```
     This example also illustrates how easy it is to integrate `acrylic` with other libraries and seamlessly switch between `rgb` and `hsl`
 
-## TODO
-- Support for Color Blindness
-- Functions that can generate a wide range of color palettes
-- `cmy`/`cmyk` color format
-- `HSLuv` color format
-- `rgba` color format
-
-## Contributions 
+## Contributions
 All contributions to `acrylic` are welcome and appreciated! Ways in which you can contribute are:
 - Report an issue ([here](https://github.com/prdx23/acrylic/issues))
 - Raise a pull request ([here](https://github.com/prdx23/acrylic/pulls))
 - Request new features
 - Spread the word about `acrylic`!
-
-## Credit
-`acrylic` was developed by [Arsh](https://prdx.me)
 
 ## License
 **MIT License**: Copyright (c) 2020 Arsh  
