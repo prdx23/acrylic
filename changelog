@@ -1,4 +1,7 @@
 
+v0.3.1
+- fixed default value of fuzzy in scheme() to 0
+
 v0.3.0
 - rewrote the validation system to follow duck typing conventions
 - optimized the validation code to remove inefficient parts

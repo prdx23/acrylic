@@ -18,7 +18,7 @@ COMPLEMENTARY_TRIADIC = 11
 MODIFIED_TRIADIC = 12
 
 
-def scheme(self, name, in_rgb=False, fuzzy=-1):
+def scheme(self, name, in_rgb=False, fuzzy=0):
     '''
     Returns a list of `Color` according to the given color scheme
 

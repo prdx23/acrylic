@@ -220,5 +220,5 @@ All contributions to `acrylic` are welcome and appreciated! Ways in which you ca
 - Spread the word about `acrylic`!
 
 ## License
-**MIT License**: Copyright (c) 2020 Arsh  
+**MIT License**: Copyright (c) 2020 - 2022 Arsh  
 [License.txt](https://github.com/prdx23/acrylic/blob/master/LICENSE.txt)

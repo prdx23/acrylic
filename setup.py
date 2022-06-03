@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="acrylic",
-    version="0.3.0",
+    version="0.3.1",
     author="Arsh",
     author_email="hi@prdx.me",
     description="A simple and intuitive library to work with colors in python",
